@@ -16,7 +16,7 @@ router.post('/apartments/:id/notes', (req, res) => {
   const result = db.prepare(
     `INSERT INTO apartment_notes (apartment_id, message) VALUES (?, ?)`
   ).run(req.params.id, message.trim());
-  res.status(201).json(db.prepare(`SELECT * FROM apartment_notes WHERE id = ?`).get(result.lastInsertRowid));
+  res.status(201).json(db.prepare(`SELECT * FROM apartment_notes WHERE id = ?`).get(Number(result.lastInsertRowid)));
 });
 
 router.delete('/notes/:id', (req, res) => {

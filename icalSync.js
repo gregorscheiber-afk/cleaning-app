@@ -60,7 +60,7 @@ router.post('/', (req, res) => {
   const result = db.prepare(
     `INSERT INTO apartments (name, ical_url, house_id) VALUES (?, ?, ?)`
   ).run(name, ical_url || null, house_id || null);
-  const apt = db.prepare(`SELECT * FROM apartments WHERE id = ?`).get(result.lastInsertRowid);
+  const apt = db.prepare(`SELECT * FROM apartments WHERE id = ?`).get(Number(result.lastInsertRowid));
   apt.notes = []; apt.upcoming_bookings = [];
   if (apt.ical_url) syncApartment(apt);
   res.status(201).json(apt);

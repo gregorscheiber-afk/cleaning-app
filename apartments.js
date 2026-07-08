@@ -26,7 +26,7 @@ router.post('/', (req, res) => {
   const { name, address } = req.body;
   if (!name) return res.status(400).json({ error: 'name ist erforderlich' });
   const result = db.prepare(`INSERT INTO houses (name, address) VALUES (?, ?)`).run(name, address || null);
-  res.status(201).json(db.prepare(`SELECT * FROM houses WHERE id = ?`).get(result.lastInsertRowid));
+  res.status(201).json(db.prepare(`SELECT * FROM houses WHERE id = ?`).get(Number(result.lastInsertRowid)));
 });
 
 router.put('/:id', (req, res) => {
