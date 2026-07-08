@@ -1,11 +1,9 @@
-// Nutzt das eingebaute SQLite von Node.js v22+ – kein extra Paket nötig!
-const { DatabaseSync } = require('node:sqlite');
+const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new DatabaseSync(path.join(__dirname, 'data.db'));
-
-db.exec(`PRAGMA journal_mode = WAL`);
-db.exec(`PRAGMA foreign_keys = ON`);
+const db = new Database(path.join(__dirname, 'data.db'));
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS houses (
