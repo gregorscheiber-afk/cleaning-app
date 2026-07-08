@@ -43,6 +43,7 @@ function applyLabels() {
   document.getElementById('modal-lbl-pms').textContent   = t('pmsCode');
   document.getElementById('modal-lbl-house').textContent = t('thHouse');
   document.getElementById('modal-cancel').textContent    = t('btnCancel');
+  document.getElementById('modal-lbl-time').textContent  = t('checkoutTime');
   document.getElementById('modal-save').textContent      = t('btnSave');
   document.documentElement.lang = localStorage.getItem('ma_lang') || 'de';
 }
@@ -148,6 +149,7 @@ function openEditModal(apt) {
   document.getElementById('modal-apt-pms').placeholder  = t('pmsCodePlaceholder');
   document.getElementById('modal-apt-name').placeholder = t('aptNamePlaceholder');
   document.getElementById('modal-apt-ical').placeholder = t('icalPlaceholder');
+  document.getElementById('modal-apt-time').value        = apt.checkout_time || '09:30';
   document.getElementById('modal-error').textContent    = '';
 
   // Haus-Select befüllen
@@ -182,7 +184,7 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   try {
     const res = await fetch(`/api/apartments/${editingAptId}`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, ical_url: ical_url || null, pms_code: pms_code || null, house_id: house_id || null }),
+      body: JSON.stringify({ name, ical_url: ical_url || null, pms_code: pms_code || null, checkout_time, house_id: house_id || null }),
     });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
     showToast(t('toastSaved'));
@@ -344,6 +346,7 @@ async function loadApartments() {
             <td style="padding:.75rem 1.1rem;width:28%">
               <div class="apt-name-cell">${esc(apt.name)}</div>
               ${apt.pms_code ? `<div style="font-size:.7rem;color:var(--accent);margin-top:.15rem">PMS: ${esc(apt.pms_code)}</div>` : ''}
+              <div style="font-size:.7rem;color:var(--ink-soft);margin-top:.1rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
               ${apt.last_sync_error ? `<div class="sync-error">⚠ ${esc(apt.last_sync_error)}</div>` : ''}
             </td>
             <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>

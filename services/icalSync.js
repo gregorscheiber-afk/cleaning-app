@@ -2,22 +2,42 @@ const ical = require('node-ical');
 const { pool } = require('../db');
 
 async function recomputeStatus(apartmentId) {
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
 
+  // Checkout-Zeit des Apartments holen (Standard: 09:30)
+  const { rows: aptRows } = await pool.query(
+    `SELECT checkout_time FROM apartments WHERE id=$1`, [apartmentId]
+  );
+  const checkoutTime = aptRows[0]?.checkout_time || '09:30';
+
+  // Aktuelle Belegung prüfen
   const { rows: current } = await pool.query(
     `SELECT id FROM bookings WHERE apartment_id=$1 AND start<=$2 AND "end">$2 LIMIT 1`,
-    [apartmentId, now]
+    [apartmentId, nowIso]
   );
 
   if (current.length) {
-    await pool.query(`UPDATE apartments SET status='belegt' WHERE id=$1`, [apartmentId]);
+    await pool.query(`UPDATE apartments SET status='belegt', checkout_time='09:30' WHERE id=$1`, [apartmentId]);
     return 'belegt';
   }
 
-  const { rows: lastCO } = await pool.query(
-    `SELECT "end" FROM bookings WHERE apartment_id=$1 AND "end"<=$2 ORDER BY "end" DESC LIMIT 1`,
-    [apartmentId, now]
-  );
+  // Zeitzone-unabhängiger Vergleich: Datum + Uhrzeit
+  // Eine Buchung gilt als "ausgecheckt" wenn:
+  //   - Abreisedatum bereits vergangen (vor heute), ODER
+  //   - Abreisedatum ist heute UND aktuelle Uhrzeit >= Reinigungszeit
+  const today       = now.toISOString().substring(0, 10);         // YYYY-MM-DD
+  const currentTime = now.toTimeString().substring(0, 5);         // HH:MM
+
+  const { rows: lastCO } = await pool.query(`
+    SELECT "end" FROM bookings
+    WHERE apartment_id = $1
+    AND (
+      LEFT("end", 10) < $2
+      OR (LEFT("end", 10) = $2 AND $3 >= $4)
+    )
+    ORDER BY "end" DESC LIMIT 1
+  `, [apartmentId, today, currentTime, checkoutTime]);
 
   if (!lastCO.length) {
     await pool.query(`UPDATE apartments SET status='sauber', last_checkout=NULL WHERE id=$1`, [apartmentId]);

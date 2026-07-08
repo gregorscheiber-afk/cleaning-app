@@ -61,6 +61,10 @@ const TRANSLATIONS = {
     importPreview: 'Preview',
     importCols: ['Room','Guest','Persons','Check-in','Check-out'],
     persons: 'Persons',
+    checkoutTime: 'Cleaning time',
+    checkoutTimePlaceholder: 'e.g. 09:30',
+    cleanFrom: 'Cleaning from',
+
 
     upcomingBookings: 'Yaklaşan rezervasyonlar',
     checkin: 'Giriş',
@@ -86,6 +90,10 @@ const TRANSLATIONS = {
     importPreview: 'Önizleme',
     importCols: ['Oda','Misafir','Kişiler','Giriş','Çıkış'],
     persons: 'Kişiler',
+    checkoutTime: 'Temizlik saati',
+    checkoutTimePlaceholder: 'örn. 09:30',
+    cleanFrom: 'Temizlik başlangıcı',
+
 
     upcomingBookings: 'Nadolazeće rezervacije',
     checkin: 'Dolazak',
@@ -111,6 +119,10 @@ const TRANSLATIONS = {
     importPreview: 'Pregled',
     importCols: ['Soba','Gost','Osobe','Dolazak','Odlazak'],
     persons: 'Osobe',
+    checkoutTime: 'Vrijeme čišćenja',
+    checkoutTimePlaceholder: 'npr. 09:30',
+    cleanFrom: 'Čišćenje od',
+
 
     upcomingBookings: 'Kommende Buchungen',
     checkin: 'Anreise',
@@ -138,6 +150,10 @@ const TRANSLATIONS = {
     importPreview: 'Vorschau',
     importCols: ['Zimmer','Gast','Personen','Anreise','Abreise'],
     persons: 'Personen',
+    checkoutTime: 'Reinigungszeit',
+    checkoutTimePlaceholder: 'z. B. 09:30',
+    cleanFrom: 'Reinigung ab',
+
 
     justNow: 'gerade eben', minutesAgo: m => `vor ${m} Min.`,
     statusBelegt: 'Belegt', statusPutzen: 'Zu reinigen', statusSauber: 'Sauber',

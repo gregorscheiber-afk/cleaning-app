@@ -22,6 +22,7 @@ async function initDb() {
       name            TEXT NOT NULL,
       ical_url        TEXT,
       pms_code        TEXT,
+      checkout_time   TEXT DEFAULT '09:30',
       status          TEXT NOT NULL DEFAULT 'sauber',
       last_checkout   TEXT,
       last_sync_error TEXT,
@@ -64,9 +65,9 @@ async function initDb() {
     );
   `);
 
-  // Neue Spalten nachrüsten falls DB schon existiert
-  await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code TEXT`);
-  await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS persons  TEXT`);
+  await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);
+  await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS checkout_time TEXT DEFAULT '09:30'`);
+  await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS persons       TEXT`);
 
   console.log('Datenbank bereit.');
 }

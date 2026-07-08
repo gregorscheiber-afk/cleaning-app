@@ -187,6 +187,7 @@ function render(apartments) {
             <div style="margin-top:.3rem">
               <span class="badge ${apt.status}">${statusLabel(apt.status)}</span>
             </div>
+            ${apt.checkout_time ? `<div style="font-size:.72rem;color:var(--ink-soft);margin-top:.3rem">⏰ ${t('cleanFrom')}: <strong style="color:var(--ink)">${esc(apt.checkout_time)} Uhr</strong></div>` : ''}
           </div>
           ${apt.status === 'muss_geputzt_werden'
             ? `<button class="btn-confirm" data-id="${apt.id}" style="align-self:flex-start">${t('btnDone')}</button>`
