@@ -273,7 +273,11 @@ document.getElementById('add-house-form').addEventListener('submit', async e => 
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, address: address || null }),
     });
-    if (!res.ok) throw new Error((await res.json()).error);
+    if (!res.ok) {
+      let msg = `Server-Fehler ${res.status}`;
+      try { const d = await res.json(); msg = d.error || msg; } catch {}
+      throw new Error(msg);
+    }
     e.target.reset(); showToast(t('toastAdded')); loadHouses();
   } catch (err) { document.getElementById('house-form-error').textContent = err.message; }
 });
@@ -289,7 +293,11 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, ical_url: ical_url || null, house_id: house_id || null }),
     });
-    if (!res.ok) throw new Error((await res.json()).error);
+    if (!res.ok) {
+      let msg = `Server-Fehler ${res.status}`;
+      try { const d = await res.json(); msg = d.error || msg; } catch {}
+      throw new Error(msg);
+    }
     e.target.reset(); showToast(t('toastAdded')); loadApartments(); loadHouses();
   } catch (err) { document.getElementById('apt-form-error').textContent = err.message; }
 });

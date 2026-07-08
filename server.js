@@ -1,62 +1,37 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+require('dotenv').config();
+const express = require('express');
+const path    = require('path');
+const cron    = require('node-cron');
 
-const db = new Database(path.join(__dirname, 'data.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const housesRouter     = require('./routes/houses');
+const apartmentsRouter = require('./routes/apartments');
+const cleaningsRouter  = require('./routes/cleanings');
+const notesRouter      = require('./routes/notes');
+const { syncAll }      = require('./services/icalSync');
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS houses (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  address TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+const app  = express();
+const PORT = process.env.PORT || 3000;
 
-CREATE TABLE IF NOT EXISTS apartments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  house_id INTEGER REFERENCES houses(id) ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  ical_url TEXT,
-  status TEXT NOT NULL DEFAULT 'sauber',
-  last_checkout TEXT,
-  last_sync_error TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-CREATE TABLE IF NOT EXISTS apartment_notes (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
-  message TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+app.use('/api/houses',     housesRouter);
+app.use('/api/apartments', apartmentsRouter);
+app.use('/api',            cleaningsRouter);
+app.use('/api',            notesRouter);
+app.get('/health', (_req, res) => res.json({ ok: true }));
 
-CREATE TABLE IF NOT EXISTS bookings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
-  uid TEXT,
-  start TEXT NOT NULL,
-  end TEXT NOT NULL,
-  summary TEXT,
-  synced_at TEXT DEFAULT (datetime('now')),
-  UNIQUE(apartment_id, uid)
-);
+// Globaler Fehlerhandler – gibt immer JSON zurück, nie leere Antwort
+app.use((err, _req, res, _next) => {
+  console.error('Unbehandelter Fehler:', err);
+  res.status(500).json({ error: err.message || 'Interner Serverfehler' });
+});
 
-CREATE TABLE IF NOT EXISTS cleanings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
-  cleaner_name TEXT NOT NULL,
-  confirmed_at TEXT DEFAULT (datetime('now')),
-  note TEXT
-);
+app.listen(PORT, () => {
+  console.log(`Server läuft auf http://localhost:${PORT}`);
+});
 
-CREATE TABLE IF NOT EXISTS notifications (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL,
-  message TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  read INTEGER DEFAULT 0
-);
-`);
-
-module.exports = db;
+syncAll().catch(err => console.error('Initialer Sync fehlgeschlagen:', err));
+cron.schedule(process.env.SYNC_CRON || '*/15 * * * *', () => {
+  syncAll().catch(err => console.error('Sync fehlgeschlagen:', err));
+});
