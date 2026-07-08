@@ -1,0 +1,19 @@
+{
+  "name": "cleaning-app",
+  "version": "1.0.0",
+  "description": "App zur Bestätigung der Reinigung von Apartments inkl. iCal-Belegungsabgleich",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "node-ical": "^0.20.1"
+  }
+}

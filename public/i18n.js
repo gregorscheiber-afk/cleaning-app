@@ -1,0 +1,206 @@
+const TRANSLATIONS = {
+  de: {
+    langName: 'Deutsch', langFlag: '🇦🇹',
+    roleClean: 'Reinigung', roleAdmin: 'Admin',
+    // Hausauswahl
+    selectHouse: 'Haus wählen',
+    selectHouseHint: 'Für welches Haus bist du heute zuständig?',
+    aptCount: n => `${n} Apartment${n !== 1 ? 's' : ''}`,
+    needsCleaning: n => `${n} zu reinigen`,
+    noHouses: 'Noch keine Häuser angelegt. Bitte den Admin kontaktieren.',
+    backToHouses: '← Häuser',
+    // Putzfrau
+    yourName: 'Dein Name', namePlaceholder: 'z. B. Maria',
+    sectionTodo: 'Zu reinigen',
+    checkout: 'Checkout', btnDone: '✓ Sauber', saving: 'Wird gespeichert …',
+    toastConfirmed: 'Bestätigt – Admin wurde informiert ✅',
+    toastNameMissing: 'Bitte zuerst deinen Namen eintragen',
+    toastError: 'Fehler – bitte erneut versuchen',
+    emptyTitle: '✨', emptyText: 'Aktuell muss nichts geputzt werden.\nGroßartige Arbeit!',
+    connError: 'Verbindung fehlgeschlagen — wird erneut versucht.',
+    // Admin
+    statTodo: 'Zu reinigen', statClean: 'Sauber', statOccupied: 'Belegt',
+    panelNotif: 'Letzte Bestätigungen', panelHouses: 'Häuser', panelApts: 'Apartments', panelAdd: 'Hinzufügen',
+    panelAddHouse: 'Haus hinzufügen', panelAddApt: 'Apartment hinzufügen',
+    thName: 'Name', thStatus: 'Status', thCheckout: 'Letzter Checkout', thHouse: 'Haus',
+    noApts: 'Noch keine Apartments angelegt.', noHousesAdmin: 'Noch keine Häuser angelegt.',
+    noNotifs: 'Noch keine Bestätigungen eingegangen.',
+    btnSync: 'Sync', btnAdd: 'Anlegen', btnDelete: 'Löschen',
+    aptNamePlaceholder: 'Name, z. B. Apartment 3B',
+    icalPlaceholder: 'iCal-URL (Airbnb / Booking.com, optional)',
+    houseName: 'Hausname, z. B. Chalet Cecilia',
+    houseAddress: 'Adresse (optional)',
+    houseSelect: 'Haus zuweisen (optional)',
+    toastAdded: 'Angelegt ✓', toastDeleted: 'Gelöscht',
+    notesTitle: 'Notizen für die Putzfrau',
+    notePlaceholder: 'z. B. Babybett aufstellen',
+    noteAdd: 'Hinzufügen',
+    noteEmpty: 'Keine Notizen',
+    noteHint: '📋',
+    justNow: 'gerade eben', minutesAgo: m => `vor ${m} Min.`,
+    statusBelegt: 'Belegt', statusPutzen: 'Zu reinigen', statusSauber: 'Sauber',
+    allHouses: 'Alle Häuser',
+  },
+  hr: {
+    langName: 'Hrvatski', langFlag: '🇭🇷',
+    roleClean: 'Čišćenje', roleAdmin: 'Admin',
+    selectHouse: 'Odaberi kuću',
+    selectHouseHint: 'Za koju kuću si danas zadužena?',
+    aptCount: n => `${n} apartman${n !== 1 ? 'a' : ''}`,
+    needsCleaning: n => `${n} za čišćenje`,
+    noHouses: 'Još nema kuća. Kontaktiraj administratora.',
+    backToHouses: '← Kuće',
+    yourName: 'Tvoje ime', namePlaceholder: 'npr. Marija',
+    sectionTodo: 'Za čišćenje',
+    checkout: 'Odjava', btnDone: '✓ Čisto', saving: 'Sprema se …',
+    toastConfirmed: 'Potvrđeno – admin je obaviješten ✅',
+    toastNameMissing: 'Molimo unesi svoje ime',
+    toastError: 'Greška – pokušaj ponovo',
+    emptyTitle: '✨', emptyText: 'Trenutno nema ništa za čišćenje.\nOdličan posao!',
+    connError: 'Veza nije uspjela — ponovni pokušaj …',
+    statTodo: 'Za čišćenje', statClean: 'Čisto', statOccupied: 'Zauzeto',
+    panelNotif: 'Posljednje potvrde', panelHouses: 'Kuće', panelApts: 'Apartmani', panelAdd: 'Dodaj',
+    panelAddHouse: 'Dodaj kuću', panelAddApt: 'Dodaj apartman',
+    thName: 'Naziv', thStatus: 'Status', thCheckout: 'Zadnja odjava', thHouse: 'Kuća',
+    noApts: 'Još nema apartmana.', noHousesAdmin: 'Još nema kuća.',
+    noNotifs: 'Još nema potvrda.',
+    btnSync: 'Sinkronizacija', btnAdd: 'Dodaj', btnDelete: 'Obriši',
+    aptNamePlaceholder: 'Naziv, npr. Apartman 3B',
+    icalPlaceholder: 'iCal URL (Airbnb / Booking.com, neobavezno)',
+    houseName: 'Naziv kuće, npr. Chalet Cecilia',
+    houseAddress: 'Adresa (neobavezno)',
+    houseSelect: 'Dodijeli kući (neobavezno)',
+    toastAdded: 'Dodano ✓', toastDeleted: 'Obrisano',
+    notesTitle: 'Napomene za čistačicu',
+    notePlaceholder: 'npr. Postaviti dječji krevetić',
+    noteAdd: 'Dodaj',
+    noteEmpty: 'Nema napomena',
+    noteHint: '📋',
+    justNow: 'upravo sada', minutesAgo: m => `prije ${m} min.`,
+    statusBelegt: 'Zauzeto', statusPutzen: 'Za čišćenje', statusSauber: 'Čisto',
+    allHouses: 'Sve kuće',
+  },
+  tr: {
+    langName: 'Türkçe', langFlag: '🇹🇷',
+    roleClean: 'Temizlik', roleAdmin: 'Admin',
+    selectHouse: 'Ev seç',
+    selectHouseHint: 'Bugün hangi evden sorumlusun?',
+    aptCount: n => `${n} daire`,
+    needsCleaning: n => `${n} temizlenecek`,
+    noHouses: 'Henüz ev eklenmemiş. Lütfen yöneticiyle iletişime geç.',
+    backToHouses: '← Evler',
+    yourName: 'Adın', namePlaceholder: 'örn. Fatma',
+    sectionTodo: 'Temizlenecek',
+    checkout: 'Çıkış', btnDone: '✓ Temiz', saving: 'Kaydediliyor …',
+    toastConfirmed: 'Onaylandı – admin bilgilendirildi ✅',
+    toastNameMissing: 'Lütfen önce adını gir',
+    toastError: 'Hata – lütfen tekrar dene',
+    emptyTitle: '✨', emptyText: 'Şu an temizlenecek bir şey yok.\nHarika iş!',
+    connError: 'Bağlantı başarısız — yeniden deneniyor …',
+    statTodo: 'Temizlenecek', statClean: 'Temiz', statOccupied: 'Dolu',
+    panelNotif: 'Son Onaylar', panelHouses: 'Evler', panelApts: 'Daireler', panelAdd: 'Ekle',
+    panelAddHouse: 'Ev ekle', panelAddApt: 'Daire ekle',
+    thName: 'Ad', thStatus: 'Durum', thCheckout: 'Son Çıkış', thHouse: 'Ev',
+    noApts: 'Henüz daire eklenmemiş.', noHousesAdmin: 'Henüz ev eklenmemiş.',
+    noNotifs: 'Henüz onay yok.',
+    btnSync: 'Senkronize', btnAdd: 'Ekle', btnDelete: 'Sil',
+    aptNamePlaceholder: 'Ad, örn. Tirol 3B Dairesi',
+    icalPlaceholder: 'iCal URL (Airbnb / Booking.com, isteğe bağlı)',
+    houseName: 'Ev adı, örn. Chalet Cecilia',
+    houseAddress: 'Adres (isteğe bağlı)',
+    houseSelect: 'Eve ata (isteğe bağlı)',
+    toastAdded: 'Eklendi ✓', toastDeleted: 'Silindi',
+    notesTitle: 'Temizlikçi için notlar',
+    notePlaceholder: 'örn. Bebek yatağını kur',
+    noteAdd: 'Ekle',
+    noteEmpty: 'Not yok',
+    noteHint: '📋',
+    justNow: 'şu an', minutesAgo: m => `${m} dk önce`,
+    statusBelegt: 'Dolu', statusPutzen: 'Temizlenecek', statusSauber: 'Temiz',
+    allHouses: 'Tüm evler',
+  },
+  en: {
+    langName: 'English', langFlag: '🇬🇧',
+    roleClean: 'Cleaning', roleAdmin: 'Admin',
+    selectHouse: 'Select house',
+    selectHouseHint: 'Which house are you cleaning today?',
+    aptCount: n => `${n} apartment${n !== 1 ? 's' : ''}`,
+    needsCleaning: n => `${n} needs cleaning`,
+    noHouses: 'No houses added yet. Please contact the admin.',
+    backToHouses: '← Houses',
+    yourName: 'Your name', namePlaceholder: 'e.g. Maria',
+    sectionTodo: 'Needs cleaning',
+    checkout: 'Checkout', btnDone: '✓ Clean', saving: 'Saving …',
+    toastConfirmed: 'Confirmed – admin notified ✅',
+    toastNameMissing: 'Please enter your name first',
+    toastError: 'Error – please try again',
+    emptyTitle: '✨', emptyText: 'Nothing to clean right now.\nGreat work!',
+    connError: 'Connection failed — retrying …',
+    statTodo: 'Needs cleaning', statClean: 'Clean', statOccupied: 'Occupied',
+    panelNotif: 'Recent Confirmations', panelHouses: 'Houses', panelApts: 'Apartments', panelAdd: 'Add',
+    panelAddHouse: 'Add house', panelAddApt: 'Add apartment',
+    thName: 'Name', thStatus: 'Status', thCheckout: 'Last Checkout', thHouse: 'House',
+    noApts: 'No apartments added yet.', noHousesAdmin: 'No houses added yet.',
+    noNotifs: 'No confirmations yet.',
+    btnSync: 'Sync', btnAdd: 'Add', btnDelete: 'Delete',
+    aptNamePlaceholder: 'Name, e.g. Apartment 3B',
+    icalPlaceholder: 'iCal URL (Airbnb / Booking.com, optional)',
+    houseName: 'House name, e.g. Chalet Cecilia',
+    houseAddress: 'Address (optional)',
+    houseSelect: 'Assign to house (optional)',
+    toastAdded: 'Added ✓', toastDeleted: 'Deleted',
+    notesTitle: 'Notes for the cleaner',
+    notePlaceholder: 'e.g. Set up baby cot',
+    noteAdd: 'Add',
+    noteEmpty: 'No notes',
+    noteHint: '📋',
+    justNow: 'just now', minutesAgo: m => `${m} min. ago`,
+    statusBelegt: 'Occupied', statusPutzen: 'Needs cleaning', statusSauber: 'Clean',
+    allHouses: 'All houses',
+  },
+};
+
+const LANG_ORDER = ['de', 'hr', 'tr', 'en'];
+
+function getLang() { return localStorage.getItem('ma_lang') || null; }
+function setLang(code) { localStorage.setItem('ma_lang', code); }
+function t(key, ...args) {
+  const lang = getLang() || 'de';
+  const val = TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS['de'][key] ?? key;
+  return typeof val === 'function' ? val(...args) : val;
+}
+
+function initLangScreen(onDone) {
+  if (getLang()) { onDone(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'lang-overlay';
+  overlay.innerHTML = `
+    <div class="lang-box">
+      <svg class="lang-logo" viewBox="0 0 60 48" fill="none">
+        <path d="M0 45 L12 21 L20 32 L30 9 L40 32 L48 21 L60 45 Z" fill="#c8963a"/>
+      </svg>
+      <div class="lang-brand">MYALPS</div>
+      <div class="lang-sub">Homes · Ötztal</div>
+      <div class="lang-divider"></div>
+      <div class="lang-list">
+        ${LANG_ORDER.map(code => {
+          const tr = TRANSLATIONS[code];
+          return `<button class="lang-btn" data-code="${code}">
+            <span class="lang-flag">${tr.langFlag}</span>
+            <span class="lang-label">${tr.langName}</span>
+            <svg class="lang-arrow" viewBox="0 0 16 16" fill="none">
+              <path d="M6 3 L11 8 L6 13" stroke="#c8963a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setLang(btn.dataset.code);
+      overlay.classList.add('fade-out');
+      setTimeout(() => { overlay.remove(); onDone(); }, 280);
+    });
+  });
+}
