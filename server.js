@@ -1,34 +1,64 @@
-require('dotenv').config();
-const express = require('express');
-const path    = require('path');
-const cron    = require('node-cron');
+// Nutzt das eingebaute SQLite von Node.js v22+ – kein extra Paket nötig!
+const { DatabaseSync } = require('node:sqlite');
+const path = require('path');
 
-const housesRouter     = require('./routes/houses');
-const apartmentsRouter = require('./routes/apartments');
-const cleaningsRouter  = require('./routes/cleanings');
-const notesRouter      = require('./routes/notes');
-const { syncAll }      = require('./services/icalSync');
+const db = new DatabaseSync(path.join(__dirname, 'data.db'));
 
-const app  = express();
-const PORT = process.env.PORT || 3000;
+db.exec(`PRAGMA journal_mode = WAL`);
+db.exec(`PRAGMA foreign_keys = ON`);
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+db.exec(`
+CREATE TABLE IF NOT EXISTS houses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  address TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
 
-app.use('/api/houses',     housesRouter);
-app.use('/api/apartments', apartmentsRouter);
-app.use('/api',            cleaningsRouter);
-app.use('/api',            notesRouter);
-app.get('/health', (req, res) => res.json({ ok: true }));
+CREATE TABLE IF NOT EXISTS apartments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  house_id INTEGER REFERENCES houses(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  ical_url TEXT,
+  status TEXT NOT NULL DEFAULT 'sauber',
+  last_checkout TEXT,
+  last_sync_error TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
 
-app.listen(PORT, () => {
-  console.log(`Server läuft auf http://localhost:${PORT}`);
-  console.log(`  Putzfrau-Ansicht: http://localhost:${PORT}/`);
-  console.log(`  Admin-Ansicht:    http://localhost:${PORT}/admin.html`);
-});
+CREATE TABLE IF NOT EXISTS apartment_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+  message TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
 
-syncAll().catch(err => console.error('Initialer Sync fehlgeschlagen:', err));
-const cronExpression = process.env.SYNC_CRON || '*/15 * * * *';
-cron.schedule(cronExpression, () => {
-  syncAll().catch(err => console.error('Sync fehlgeschlagen:', err));
-});
+CREATE TABLE IF NOT EXISTS bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+  uid TEXT,
+  start TEXT NOT NULL,
+  end TEXT NOT NULL,
+  summary TEXT,
+  synced_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(apartment_id, uid)
+);
+
+CREATE TABLE IF NOT EXISTS cleanings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+  cleaner_name TEXT NOT NULL,
+  confirmed_at TEXT DEFAULT (datetime('now')),
+  note TEXT
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  apartment_id INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  read INTEGER DEFAULT 0
+);
+`);
+
+module.exports = db;
