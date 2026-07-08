@@ -1,42 +1,48 @@
 const ical = require('node-ical');
-const db   = require('../db');
+const { pool } = require('../db');
 
-function recomputeStatus(apartmentId) {
-  const nowIso = new Date().toISOString();
+async function recomputeStatus(apartmentId) {
+  const now = new Date().toISOString();
 
-  const currentBooking = db.prepare(
-    `SELECT id FROM bookings WHERE apartment_id=? AND start<=? AND end>? LIMIT 1`
-  ).get(apartmentId, nowIso, nowIso);
+  const { rows: current } = await pool.query(
+    `SELECT id FROM bookings WHERE apartment_id=$1 AND start<=$2 AND "end">$2 LIMIT 1`,
+    [apartmentId, now]
+  );
 
-  if (currentBooking) {
-    db.prepare(`UPDATE apartments SET status='belegt' WHERE id=?`).run(apartmentId);
+  if (current.length) {
+    await pool.query(`UPDATE apartments SET status='belegt' WHERE id=$1`, [apartmentId]);
     return 'belegt';
   }
 
-  const lastCheckoutRow = db.prepare(
-    `SELECT end FROM bookings WHERE apartment_id=? AND end<=? ORDER BY end DESC LIMIT 1`
-  ).get(apartmentId, nowIso);
+  const { rows: lastCO } = await pool.query(
+    `SELECT "end" FROM bookings WHERE apartment_id=$1 AND "end"<=$2 ORDER BY "end" DESC LIMIT 1`,
+    [apartmentId, now]
+  );
 
-  if (!lastCheckoutRow) {
-    db.prepare(`UPDATE apartments SET status='sauber', last_checkout=NULL WHERE id=?`).run(apartmentId);
+  if (!lastCO.length) {
+    await pool.query(`UPDATE apartments SET status='sauber', last_checkout=NULL WHERE id=$1`, [apartmentId]);
     return 'sauber';
   }
 
-  const lastCleaning = db.prepare(
-    `SELECT confirmed_at FROM cleanings WHERE apartment_id=? ORDER BY confirmed_at DESC LIMIT 1`
-  ).get(apartmentId);
+  const { rows: lastClean } = await pool.query(
+    `SELECT confirmed_at FROM cleanings WHERE apartment_id=$1 ORDER BY confirmed_at DESC LIMIT 1`,
+    [apartmentId]
+  );
 
-  const cleaned = lastCleaning &&
-    new Date(lastCleaning.confirmed_at) >= new Date(lastCheckoutRow.end);
+  const cleaned = lastClean.length &&
+    new Date(lastClean[0].confirmed_at) >= new Date(lastCO[0].end);
 
   const status = cleaned ? 'sauber' : 'muss_geputzt_werden';
-  db.prepare(`UPDATE apartments SET status=?, last_checkout=? WHERE id=?`)
-    .run(status, lastCheckoutRow.end, apartmentId);
+  await pool.query(
+    `UPDATE apartments SET status=$1, last_checkout=$2 WHERE id=$3`,
+    [status, lastCO[0].end, apartmentId]
+  );
   return status;
 }
 
 async function syncApartment(apartment) {
   if (!apartment.ical_url) return;
+  const client = await pool.connect();
   try {
     const data = await ical.async.fromURL(apartment.ical_url);
 
@@ -44,7 +50,6 @@ async function syncApartment(apartment) {
     const events = Object.values(data)
       .filter(ev => ev.type === 'VEVENT' && ev.start && ev.end)
       .map(ev => ({
-        apartment_id: apartment.id,
         uid:     ev.uid || `${new Date(ev.start).toISOString()}|${new Date(ev.end).toISOString()}`,
         start:   new Date(ev.start).toISOString(),
         end:     new Date(ev.end).toISOString(),
@@ -57,29 +62,32 @@ async function syncApartment(apartment) {
         return true;
       });
 
-    const sync = db.transaction((evList) => {
-      db.prepare(`DELETE FROM bookings WHERE apartment_id=?`).run(apartment.id);
-      const ins = db.prepare(
-        `INSERT INTO bookings (apartment_id,uid,start,end,summary,synced_at)
-         VALUES (@apartment_id,@uid,@start,@end,@summary,datetime('now'))`
+    await client.query('BEGIN');
+    await client.query(`DELETE FROM bookings WHERE apartment_id=$1`, [apartment.id]);
+    for (const ev of events) {
+      await client.query(
+        `INSERT INTO bookings (apartment_id,uid,start,"end",summary) VALUES ($1,$2,$3,$4,$5)`,
+        [apartment.id, ev.uid, ev.start, ev.end, ev.summary]
       );
-      for (const ev of evList) ins.run(ev);
-    });
+    }
+    await client.query('COMMIT');
 
-    sync(events);
-    db.prepare(`UPDATE apartments SET last_sync_error=NULL WHERE id=?`).run(apartment.id);
-    recomputeStatus(apartment.id);
+    await pool.query(`UPDATE apartments SET last_sync_error=NULL WHERE id=$1`, [apartment.id]);
+    await recomputeStatus(apartment.id);
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error(`Sync-Fehler Apartment ${apartment.id}:`, err.message);
-    db.prepare(`UPDATE apartments SET last_sync_error=? WHERE id=?`).run(err.message, apartment.id);
+    await pool.query(`UPDATE apartments SET last_sync_error=$1 WHERE id=$2`, [err.message, apartment.id]);
+  } finally {
+    client.release();
   }
 }
 
 async function syncAll() {
-  const apts = db.prepare(
+  const { rows } = await pool.query(
     `SELECT * FROM apartments WHERE ical_url IS NOT NULL AND ical_url!=''`
-  ).all();
-  for (const apt of apts) await syncApartment(apt);
+  );
+  for (const apt of rows) await syncApartment(apt);
 }
 
 module.exports = { syncApartment, syncAll, recomputeStatus };

@@ -1,62 +1,74 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const { Pool } = require('pg');
 
-const db = new Database(path.join(__dirname, 'data.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('railway.internal')
+    ? false
+    : { rejectUnauthorized: false }
+});
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS houses (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  address TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS houses (
+      id         SERIAL PRIMARY KEY,
+      name       TEXT NOT NULL,
+      address    TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
 
-CREATE TABLE IF NOT EXISTS apartments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  house_id INTEGER REFERENCES houses(id) ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  ical_url TEXT,
-  status TEXT NOT NULL DEFAULT 'sauber',
-  last_checkout TEXT,
-  last_sync_error TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+    CREATE TABLE IF NOT EXISTS apartments (
+      id              SERIAL PRIMARY KEY,
+      house_id        INTEGER REFERENCES houses(id) ON DELETE SET NULL,
+      name            TEXT NOT NULL,
+      ical_url        TEXT,
+      pms_code        TEXT,
+      status          TEXT NOT NULL DEFAULT 'sauber',
+      last_checkout   TEXT,
+      last_sync_error TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
 
-CREATE TABLE IF NOT EXISTS apartment_notes (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
-  message TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now'))
-);
+    CREATE TABLE IF NOT EXISTS apartment_notes (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      message      TEXT NOT NULL,
+      created_at   TIMESTAMPTZ DEFAULT NOW()
+    );
 
-CREATE TABLE IF NOT EXISTS bookings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
-  uid TEXT,
-  start TEXT NOT NULL,
-  end TEXT NOT NULL,
-  summary TEXT,
-  synced_at TEXT DEFAULT (datetime('now')),
-  UNIQUE(apartment_id, uid)
-);
+    CREATE TABLE IF NOT EXISTS bookings (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      uid          TEXT,
+      start        TEXT NOT NULL,
+      "end"        TEXT NOT NULL,
+      summary      TEXT,
+      persons      TEXT,
+      synced_at    TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(apartment_id, uid)
+    );
 
-CREATE TABLE IF NOT EXISTS cleanings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
-  cleaner_name TEXT NOT NULL,
-  confirmed_at TEXT DEFAULT (datetime('now')),
-  note TEXT
-);
+    CREATE TABLE IF NOT EXISTS cleanings (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      cleaner_name TEXT NOT NULL,
+      confirmed_at TIMESTAMPTZ DEFAULT NOW(),
+      note         TEXT
+    );
 
-CREATE TABLE IF NOT EXISTS notifications (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  apartment_id INTEGER NOT NULL,
-  message TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  read INTEGER DEFAULT 0
-);
-`);
+    CREATE TABLE IF NOT EXISTS notifications (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL,
+      message      TEXT NOT NULL,
+      created_at   TIMESTAMPTZ DEFAULT NOW(),
+      read         INTEGER DEFAULT 0
+    );
+  `);
 
-module.exports = db;
+  // Neue Spalten nachrüsten falls DB schon existiert
+  await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code TEXT`);
+  await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS persons  TEXT`);
+
+  console.log('Datenbank bereit.');
+}
+
+module.exports = { pool, initDb };
