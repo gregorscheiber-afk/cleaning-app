@@ -95,22 +95,50 @@ function renderNotesPanel(apt) {
 }
 
 // ── Buchungen-Panel ───────────────────────────────────────
+function parsePersons(persons) {
+  if (!persons) return { adults: 0, children: 0, babies: 0 };
+  const a = (persons.match(/(\d+)\s*Erw/i)    || [0,0])[1];
+  const k = (persons.match(/(\d+)\s*Kind/i)   || [0,0])[1];
+  const b = (persons.match(/(\d+)\s*Baby/i)   || [0,0])[1];
+  return { adults: Number(a), children: Number(k), babies: Number(b) };
+}
+
 function renderAdminBookings(bookings) {
   if (!bookings?.length) return `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noUpcoming')}</div>`;
-  return bookings.map(b => `
-    <div class="admin-booking-row">
-      <div class="admin-booking-in">
-        <span class="admin-booking-label">${t('checkin')}</span>
-        <span class="admin-booking-date">${fmtDate(b.start)}</span>
+  return bookings.map(b => {
+    const p = parsePersons(b.persons);
+    return `
+    <div class="admin-booking-row" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div class="admin-booking-in">
+          <span class="admin-booking-label">${t('checkin')}</span>
+          <span class="admin-booking-date">${fmtDate(b.start)}</span>
+        </div>
+        <span class="admin-booking-arrow">→</span>
+        <div class="admin-booking-out">
+          <span class="admin-booking-label">${t('checkout2')}</span>
+          <span class="admin-booking-date">${fmtDate(b.end)}</span>
+        </div>
+        <span class="admin-booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
       </div>
-      <span class="admin-booking-arrow">→</span>
-      <div class="admin-booking-out">
-        <span class="admin-booking-label">${t('checkout2')}</span>
-        <span class="admin-booking-date">${fmtDate(b.end)}</span>
+      <div class="persons-editor">
+        <span class="persons-label">👥 ${t('personsEdit')}:</span>
+        <div class="persons-field">
+          <span class="persons-label">${t('adults')}</span>
+          <input class="persons-input" type="number" min="0" max="20" value="${p.adults}" data-booking="${b.id}" data-field="adults"/>
+        </div>
+        <div class="persons-field">
+          <span class="persons-label">${t('children')}</span>
+          <input class="persons-input" type="number" min="0" max="20" value="${p.children}" data-booking="${b.id}" data-field="children"/>
+        </div>
+        <div class="persons-field">
+          <span class="persons-label">${t('babies')}</span>
+          <input class="persons-input" type="number" min="0" max="20" value="${p.babies}" data-booking="${b.id}" data-field="babies"/>
+        </div>
+        <button class="persons-save-btn" data-save-booking="${b.id}">✓</button>
       </div>
-      ${b.persons ? `<span class="admin-booking-persons">👥 ${esc(b.persons)}</span>` : ''}
-      <span class="admin-booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function attachNoteHandlers(apt) {
@@ -392,6 +420,25 @@ async function loadApartments() {
     });
   });
   apts.forEach(apt => attachNoteHandlers(apt));
+
+  // Personen speichern
+  document.querySelectorAll('[data-save-booking]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.saveBooking;
+      const adults   = document.querySelector(`[data-booking="${id}"][data-field="adults"]`)?.value   || 0;
+      const children = document.querySelector(`[data-booking="${id}"][data-field="children"]`)?.value || 0;
+      const babies   = document.querySelector(`[data-booking="${id}"][data-field="babies"]`)?.value   || 0;
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        await fetch(`/api/bookings/${id}/persons`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ adults: Number(adults), children: Number(children), babies: Number(babies) }),
+        });
+        showToast(t('toastSaved'));
+        loadApartments();
+      } catch { showToast(t('toastError')); btn.disabled = false; btn.textContent = '✓'; }
+    });
+  });
 }
 
 // ── Benachrichtigungen ────────────────────────────────────

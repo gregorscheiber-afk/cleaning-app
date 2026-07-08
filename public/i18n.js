@@ -64,6 +64,7 @@ const TRANSLATIONS = {
     checkoutTime: 'Cleaning time',
     checkoutTimePlaceholder: 'e.g. 09:30',
     cleanFrom: 'Cleaning from',
+    adults: 'Adults', children: 'Children', babies: 'Babies', personsEdit: 'Persons',
 
 
     upcomingBookings: 'Yaklaşan rezervasyonlar',
@@ -93,6 +94,7 @@ const TRANSLATIONS = {
     checkoutTime: 'Temizlik saati',
     checkoutTimePlaceholder: 'örn. 09:30',
     cleanFrom: 'Temizlik başlangıcı',
+    adults: 'Yetişkin', children: 'Çocuk', babies: 'Bebek', personsEdit: 'Kişiler',
 
 
     upcomingBookings: 'Nadolazeće rezervacije',
@@ -122,6 +124,7 @@ const TRANSLATIONS = {
     checkoutTime: 'Vrijeme čišćenja',
     checkoutTimePlaceholder: 'npr. 09:30',
     cleanFrom: 'Čišćenje od',
+    adults: 'Odrasli', children: 'Djeca', babies: 'Dojenče', personsEdit: 'Osobe',
 
 
     upcomingBookings: 'Kommende Buchungen',
@@ -153,6 +156,7 @@ const TRANSLATIONS = {
     checkoutTime: 'Reinigungszeit',
     checkoutTimePlaceholder: 'z. B. 09:30',
     cleanFrom: 'Reinigung ab',
+    adults: 'Erw.', children: 'Kind', babies: 'Baby', personsEdit: 'Personen',
 
 
     justNow: 'gerade eben', minutesAgo: m => `vor ${m} Min.`,

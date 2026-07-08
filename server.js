@@ -16,6 +16,7 @@ const apartmentsRouter = require('./routes/apartments');
 const cleaningsRouter  = require('./routes/cleanings');
 const notesRouter      = require('./routes/notes');
 const importRouter     = require('./routes/import');
+const bookingsRouter   = require('./routes/bookings');
 const { syncAll }      = require('./services/icalSync');
 
 const app  = express();
@@ -29,6 +30,7 @@ app.use('/api/apartments', apartmentsRouter);
 app.use('/api',            cleaningsRouter);
 app.use('/api',            notesRouter);
 app.use('/api',            importRouter);
+app.use('/api',            bookingsRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 app.use((err, _req, res, _next) => {
