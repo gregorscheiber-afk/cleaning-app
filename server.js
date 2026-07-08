@@ -3,6 +3,13 @@ const express = require('express');
 const path    = require('path');
 const cron    = require('node-cron');
 
+// Sofort prüfen ob DATABASE_URL gesetzt ist
+if (!process.env.DATABASE_URL) {
+  console.error('FEHLER: DATABASE_URL ist nicht gesetzt!');
+  process.exit(1);
+}
+console.log('DATABASE_URL gefunden, verbinde mit Datenbank...');
+
 const { initDb }       = require('./db');
 const housesRouter     = require('./routes/houses');
 const apartmentsRouter = require('./routes/apartments');
@@ -25,19 +32,19 @@ app.use('/api',            importRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 app.use((err, _req, res, _next) => {
-  console.error('Fehler:', err.message);
+  console.error('Route-Fehler:', err.message);
   res.status(500).json({ error: err.message || 'Interner Serverfehler' });
 });
 
 initDb()
   .then(() => {
     app.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
-    syncAll().catch(err => console.error('Initialer Sync fehlgeschlagen:', err.message));
+    syncAll().catch(err => console.error('Sync fehlgeschlagen:', err.message));
     cron.schedule(process.env.SYNC_CRON || '*/15 * * * *', () => {
       syncAll().catch(err => console.error('Sync fehlgeschlagen:', err.message));
     });
   })
   .catch(err => {
-    console.error('DB-Init fehlgeschlagen:', err.message);
+    console.error('DB-Init fehlgeschlagen:', err.message || err.code || JSON.stringify(err));
     process.exit(1);
   });
