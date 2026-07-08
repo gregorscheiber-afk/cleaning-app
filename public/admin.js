@@ -35,7 +35,14 @@ function applyLabels() {
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-function fmt(iso) {
+function fmtDate(iso) {
+  if (!iso) return '–';
+  return new Date(iso).toLocaleDateString(document.documentElement.lang, {
+    day: '2-digit', month: '2-digit', year: '2-digit'
+  });
+}
+
+function fmtDateTime(iso) {
   if (!iso) return '–';
   return new Date(iso).toLocaleString(document.documentElement.lang, {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
@@ -45,19 +52,46 @@ function fmt(iso) {
 function fmtAge(iso) {
   if (!iso) return '';
   const diff = Math.round((Date.now() - new Date(iso)) / 60000);
-  return diff < 1 ? t('justNow') : diff < 60 ? t('minutesAgo', diff) : fmt(iso);
+  return diff < 1 ? t('justNow') : diff < 60 ? t('minutesAgo', diff) : fmtDateTime(iso);
+}
+
+function nightsBetween(start, end) {
+  return Math.round((new Date(end) - new Date(start)) / 86400000);
 }
 
 function statusLabel(s) {
   return { belegt: t('statusBelegt'), muss_geputzt_werden: t('statusPutzen'), sauber: t('statusSauber') }[s] || s;
 }
 
-// ── Notizen-Panel HTML ────────────────────────────────────
+// ── Buchungen-Panel für Admin ────────────────────────────
+function renderAdminBookings(bookings) {
+  if (!bookings || !bookings.length) {
+    return `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noUpcoming')}</div>`;
+  }
+  return bookings.map(b => {
+    const nights = nightsBetween(b.start, b.end);
+    return `
+      <div class="admin-booking-row">
+        <div class="admin-booking-in">
+          <span class="admin-booking-label">${t('checkin')}</span>
+          <span class="admin-booking-date">${fmtDate(b.start)}</span>
+        </div>
+        <span class="admin-booking-arrow">→</span>
+        <div class="admin-booking-out">
+          <span class="admin-booking-label">${t('checkout2')}</span>
+          <span class="admin-booking-date">${fmtDate(b.end)}</span>
+        </div>
+        <span class="admin-booking-nights">${t('night', nights)}</span>
+      </div>`;
+  }).join('');
+}
+
+// ── Notizen-Panel ────────────────────────────────────────
 function renderNotesPanel(apt) {
   const notes = (apt.notes || []).map(n => `
-    <div class="note-row" data-note-id="${n.id}">
+    <div class="note-row">
       <span class="note-row-text">${esc(n.message)}</span>
-      <button class="note-del-btn" data-del-note="${n.id}" title="Löschen">✕</button>
+      <button class="note-del-btn" data-del-note="${n.id}">✕</button>
     </div>`).join('');
 
   return `
@@ -71,11 +105,14 @@ function renderNotesPanel(apt) {
                placeholder="${t('notePlaceholder')}" maxlength="120"/>
         <button class="note-add-btn" data-apt-id="${apt.id}">${t('noteAdd')}</button>
       </div>
+    </div>
+    <div class="admin-bookings-panel">
+      <div class="admin-bookings-title">📅 ${t('upcomingBookings')}</div>
+      ${renderAdminBookings(apt.upcoming_bookings)}
     </div>`;
 }
 
 function attachNoteHandlers(apt) {
-  // Hinzufügen
   const addBtn = document.querySelector(`[data-apt-id="${apt.id}"].note-add-btn`);
   const input  = document.getElementById(`note-input-${apt.id}`);
   if (!addBtn || !input) return;
@@ -94,7 +131,7 @@ function attachNoteHandlers(apt) {
       if (!res.ok) throw new Error();
       input.value = '';
       showToast(t('toastAdded'));
-      loadApartments(); // neu rendern
+      loadApartments();
     } catch {
       showToast(t('toastError'));
     } finally {
@@ -102,11 +139,9 @@ function attachNoteHandlers(apt) {
       addBtn.disabled = false;
     }
   };
-
   addBtn.addEventListener('click', doAdd);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
 
-  // Löschen
   document.querySelectorAll(`#notes-panel-${apt.id} [data-del-note]`).forEach(btn => {
     btn.addEventListener('click', async () => {
       await fetch(`/api/notes/${btn.dataset.delNote}`, { method: 'DELETE' });
@@ -118,11 +153,9 @@ function attachNoteHandlers(apt) {
 
 // ── Häuser ───────────────────────────────────────────────
 async function loadHouses() {
-  const res = await fetch('/api/houses');
-  allHouses = await res.json();
+  allHouses = await (await fetch('/api/houses')).json();
 
-  const tbody = document.getElementById('houses-tbody');
-  tbody.innerHTML = allHouses.map(h => `
+  document.getElementById('houses-tbody').innerHTML = allHouses.map(h => `
     <tr>
       <td><div class="apt-name-cell">${esc(h.name)}</div></td>
       <td style="color:var(--ink-soft);font-size:.82rem">${esc(h.address || '–')}</td>
@@ -131,7 +164,7 @@ async function loadHouses() {
     </tr>`).join('')
     || `<tr><td colspan="4" style="color:var(--ink-muted);padding:1.1rem">${t('noHousesAdmin')}</td></tr>`;
 
-  tbody.querySelectorAll('[data-del-house]').forEach(btn => {
+  document.querySelectorAll('[data-del-house]').forEach(btn => {
     btn.addEventListener('click', async () => {
       await fetch(`/api/houses/${btn.dataset.delHouse}`, { method: 'DELETE' });
       showToast(t('toastDeleted'));
@@ -139,13 +172,13 @@ async function loadHouses() {
     });
   });
 
-  const houseOpts = `<option value="">${t('houseSelect')}</option>` +
+  document.getElementById('apt-house').innerHTML =
+    `<option value="">${t('houseSelect')}</option>` +
     allHouses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
-  document.getElementById('apt-house').innerHTML = houseOpts;
 
-  const filterOpts = `<option value="">${t('allHouses')}</option>` +
+  document.getElementById('filter-house').innerHTML =
+    `<option value="">${t('allHouses')}</option>` +
     allHouses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
-  document.getElementById('filter-house').innerHTML = filterOpts;
 }
 
 // ── Apartments ───────────────────────────────────────────
@@ -154,8 +187,7 @@ async function loadApartments() {
   const url = '/api/apartments' + (houseId ? `?house_id=${houseId}` : '');
   const apts = await (await fetch(url)).json();
 
-  // Stats immer über alle
-  const all = await (await fetch('/api/apartments')).json();
+  const all = houseId ? await (await fetch('/api/apartments')).json() : apts;
   const c = { muss_geputzt_werden: 0, sauber: 0, belegt: 0 };
   all.forEach(a => { if (c[a.status] !== undefined) c[a.status]++; });
   document.getElementById('stat-putzen').textContent = c.muss_geputzt_werden;
@@ -175,26 +207,23 @@ async function loadApartments() {
       <td colspan="5" style="padding:0">
         <table style="width:100%;border-collapse:collapse">
           <tr>
-            <td style="padding:.75rem 1.1rem;width:30%">
+            <td style="padding:.75rem 1.1rem;width:28%">
               <div class="apt-name-cell">${esc(apt.name)}</div>
               ${apt.last_sync_error ? `<div class="sync-error">⚠ ${esc(apt.last_sync_error)}</div>` : ''}
             </td>
-            <td style="padding:.75rem .5rem;width:20%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id] || '–')}</td>
-            <td style="padding:.75rem .5rem;width:20%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
-            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmt(apt.last_checkout)}</td>
+            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id] || '–')}</td>
+            <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
+            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
             <td style="padding:.75rem 1.1rem .75rem .5rem;white-space:nowrap">
               <button class="btn-sync" data-sync="${apt.id}">${t('btnSync')}</button>
               <button class="btn-sync" data-del="${apt.id}" style="color:var(--putzen);margin-left:4px">${t('btnDelete')}</button>
             </td>
           </tr>
-          <tr>
-            <td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td>
-          </tr>
+          <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
         </table>
       </td>
     </tr>`).join('');
 
-  // Event-Handler
   tbody.querySelectorAll('[data-sync]').forEach(btn => {
     btn.addEventListener('click', async () => {
       btn.textContent = '…';
@@ -266,7 +295,6 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
 });
 
 document.getElementById('filter-house').addEventListener('change', loadApartments);
-
 document.getElementById('btn-lang').addEventListener('click', () => {
   localStorage.removeItem('ma_lang'); location.reload();
 });
