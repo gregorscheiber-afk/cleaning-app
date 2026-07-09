@@ -70,35 +70,26 @@ router.post('/import-bookings', async (req, res, next) => {
         continue;
       }
 
-      // Beim ersten Excel-Eintrag für dieses Apartment: alle iCal-Buchungen löschen
+      // Beim ersten Excel-Eintrag für dieses Apartment:
+      // ALLE alten Buchungen löschen (außer manuelle) → sauberer Neustart
       if (!affectedApts.has(apt.id)) {
         await pool.query(
-          `DELETE FROM bookings WHERE apartment_id=$1 AND (source='ical' OR source IS NULL)`,
+          `DELETE FROM bookings WHERE apartment_id=$1 AND (source != 'manual' OR source IS NULL)`,
           [apt.id]
         );
       }
 
-      const { rows: existing } = await pool.query(
-        `SELECT id FROM bookings WHERE apartment_id=$1 AND LEFT(start,10)=$2 AND source='excel'`,
-        [apt.id, start]
+      // Immer neu einfügen – keine Duplikat-Prüfung nötig da vorher gelöscht
+      const uid = `excel-${apt.id}-${start}`;
+      await pool.query(
+        `INSERT INTO bookings (apartment_id, uid, start, "end", guest_name, persons, source)
+         VALUES ($1, $2, $3, $4, $5, $6, 'excel')
+         ON CONFLICT (apartment_id, uid) DO UPDATE SET
+           "end"=EXCLUDED."end", guest_name=EXCLUDED.guest_name,
+           persons=EXCLUDED.persons, synced_at=NOW()`,
+        [apt.id, uid, start, end, guestName, persons]
       );
-
-      if (existing.length) {
-        await pool.query(
-          `UPDATE bookings SET "end"=$1, guest_name=$2, persons=$3, synced_at=NOW()
-           WHERE id=$4`,
-          [end, guestName, persons, existing[0].id]
-        );
-        updated++;
-      } else {
-        const uid = `excel-${apt.id}-${start}`;
-        await pool.query(
-          `INSERT INTO bookings (apartment_id, uid, start, "end", guest_name, persons, source)
-           VALUES ($1, $2, $3, $4, $5, $6, 'excel')`,
-          [apt.id, uid, start, end, guestName, persons]
-        );
-        created++;
-      }
+      created++;
 
       affectedApts.add(apt.id);
       details.push({ zimmer: row.zimmer, apt: apt.name, start, end, status: 'ok' });
