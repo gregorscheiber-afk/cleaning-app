@@ -7,7 +7,6 @@ let allApartments = [];
 
 function applyLabels() {
   document.getElementById('lbl-role').textContent  = t('roleClean');
-  document.getElementById('lbl-admin').textContent = t('roleAdmin');
   document.documentElement.lang = localStorage.getItem('ma_lang') || 'de';
 }
 
