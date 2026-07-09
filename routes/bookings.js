@@ -2,7 +2,7 @@ const express = require('express');
 const { pool } = require('../db');
 const router = express.Router();
 
-// PUT /api/bookings/:id/persons  { adults, children, babies }
+// PUT /api/bookings/:id/persons
 router.put('/bookings/:id/persons', async (req, res, next) => {
   try {
     const { adults = 0, children = 0, babies = 0 } = req.body || {};
@@ -11,11 +11,39 @@ router.put('/bookings/:id/persons', async (req, res, next) => {
     if (Number(children) > 0) parts.push(`${children} Kind${Number(children)>1?'er':''}`);
     if (Number(babies)   > 0) parts.push(`${babies} Baby${Number(babies)>1?'s':''}`);
     const persons = parts.join(' · ') || null;
-
     await pool.query(`UPDATE bookings SET persons=$1 WHERE id=$2`, [persons, req.params.id]);
-
-    // Rohdaten zurückgeben damit das Frontend die Felder korrekt befüllen kann
     res.json({ id: req.params.id, persons, adults: Number(adults), children: Number(children), babies: Number(babies) });
+  } catch(e) { next(e); }
+});
+
+// POST /api/apartments/:id/bookings – manuelle Buchung anlegen
+router.post('/apartments/:id/bookings', async (req, res, next) => {
+  try {
+    const { start, end, persons } = req.body || {};
+    if (!start || !end) return res.status(400).json({ error: 'start und end sind erforderlich' });
+    if (start >= end) return res.status(400).json({ error: 'Abreise muss nach Anreise liegen' });
+
+    const apt = await pool.query(`SELECT id FROM apartments WHERE id=$1`, [req.params.id]);
+    if (!apt.rows.length) return res.status(404).json({ error: 'Apartment nicht gefunden' });
+
+    const uid = `manual-${req.params.id}-${start}`;
+    const { rows } = await pool.query(
+      `INSERT INTO bookings (apartment_id, uid, start, "end", persons, source)
+       VALUES ($1, $2, $3, $4, $5, 'manual') RETURNING *`,
+      [req.params.id, uid, start, end, persons || null]
+    );
+    res.status(201).json(rows[0]);
+  } catch(e) { next(e); }
+});
+
+// DELETE /api/bookings/:id – nur manuelle Buchungen löschbar
+router.delete('/bookings/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(`SELECT source FROM bookings WHERE id=$1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Buchung nicht gefunden' });
+    if (rows[0].source !== 'manual') return res.status(403).json({ error: 'Nur manuelle Buchungen können gelöscht werden' });
+    await pool.query(`DELETE FROM bookings WHERE id=$1`, [req.params.id]);
+    res.status(204).end();
   } catch(e) { next(e); }
 });
 

@@ -40,6 +40,20 @@
     <div class="panel-body"><div id="notifications" class="notif-list"></div></div>
   </div>
 
+  <!-- Apartments -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title" id="lbl-panel-apts"></span>
+      <select id="filter-house" style="font-size:.75rem;background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:.25rem .5rem;"></select>
+    </div>
+    <div class="panel-body">
+      <table class="apt-table">
+        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th></th></tr></thead>
+        <tbody id="apt-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Häuser -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
@@ -48,6 +62,23 @@
         <thead><tr><th id="th-name-h"></th><th>Adresse</th><th>Apartments</th><th></th></tr></thead>
         <tbody id="houses-tbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Struktur Import -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
+    <div class="panel-body" style="padding:1.1rem">
+      <p class="import-hint" id="lbl-import-structure-hint"></p>
+      <div style="display:flex;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
+        <button class="btn-secondary" id="btn-download-template" style="font-size:.8rem"></button>
+        <label class="import-file-label" for="structure-file-input" id="lbl-structure-btn"></label>
+        <input type="file" id="structure-file-input" accept=".xlsx,.xls" style="display:none"/>
+        <span class="import-filename" id="structure-filename">–</span>
+      </div>
+      <div id="structure-preview"></div>
+      <button class="btn-primary" id="btn-structure-start" style="display:none"></button>
+      <div id="structure-result"></div>
     </div>
   </div>
 
@@ -98,13 +129,23 @@
     </div>
   </div>
 
+  <!-- Häuser -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
+    <div class="panel-body">
+      <table class="apt-table">
+        <thead><tr><th id="th-name-h"></th><th>Adresse</th><th>Apartments</th><th></th></tr></thead>
+        <tbody id="houses-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Haus hinzufügen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-add-house"></span></div>
     <div class="panel-body">
       <form id="add-house-form" class="add-form">
         <input id="house-name" type="text" required/>
-        <input id="house-address" type="text"/>
         <button type="submit" class="btn-primary" id="btn-add-house"></button>
         <div class="form-error" id="house-form-error"></div>
       </form>

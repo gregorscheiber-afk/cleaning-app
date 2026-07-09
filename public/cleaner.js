@@ -56,7 +56,8 @@ function renderBookings(bookings) {
         <span class="booking-date-value">${fmtDate(b.end)}</span>
       </div>
       <span class="booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
-      ${b.persons ? `<div class="booking-persons">👥 ${esc(b.persons)}</div>` : ''}
+      ${b.persons   ? `<div class="booking-persons">👥 ${esc(b.persons)}</div>` : ''}
+      ${b.guest_name ? `<div style="font-size:.72rem;color:var(--ink-soft);grid-column:1/-1">👤 ${esc(b.guest_name)}</div>` : ''}
     </div>`;
   }).join('');
   return `<div class="bookings-block"><div class="bookings-title">📅 ${t('upcomingBookings')}</div>${rows}</div>`;

@@ -20,7 +20,7 @@ function applyLabels() {
   document.getElementById('lbl-panel-houses').textContent    = t('panelHouses');
   document.getElementById('lbl-panel-apts').textContent      = t('panelApts');
   document.getElementById('lbl-panel-import').textContent    = t('panelImport');
-  document.getElementById('lbl-import-hint').textContent          = t('importHint');
+  document.getElementById('lbl-import-hint').textContent          = t('importHintNew') || t('importHint');
   document.getElementById('lbl-panel-import-structure').textContent = t('panelImportStructure');
   document.getElementById('lbl-import-structure-hint').textContent  = t('importStructureHint');
   document.getElementById('lbl-structure-btn').textContent          = t('importBtn');
@@ -36,7 +36,6 @@ function applyLabels() {
   document.getElementById('th-status').textContent           = t('thStatus');
   document.getElementById('th-checkout').textContent         = t('thCheckout');
   document.getElementById('house-name').placeholder          = t('houseName');
-  document.getElementById('house-address').placeholder       = t('houseAddress');
   document.getElementById('apt-name').placeholder            = t('aptNamePlaceholder');
   document.getElementById('apt-ical').placeholder            = t('icalPlaceholder');
   document.getElementById('apt-pms').placeholder             = t('pmsCodePlaceholder');
@@ -113,9 +112,14 @@ function renderAdminBookings(bookings) {
   return bookings.map(b => {
     const p = parsePersons(b.persons);
     const isLM = b.highlighted_until && new Date() < new Date(b.highlighted_until);
+    const isManual = b.source === 'manual';
     return `
-    <div class="admin-booking-row${isLM ? ' last-minute' : ''}" style="flex-direction:column;align-items:stretch">
-      ${isLM ? `<div style="margin-bottom:.4rem"><span class="last-minute-badge">${t('lastMinute')}</span></div>` : ''}
+    <div class="admin-booking-row${isLM ? ' last-minute' : ''}${isManual ? ' manual' : ''}" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;flex-wrap:wrap">
+        ${isLM ? `<span class="last-minute-badge">${t('lastMinute')}</span>` : ''}
+        ${isManual ? `<span class="manual-badge">${t('manualBadge')}</span>` : ''}
+        ${isManual ? `<button class="btn-del-booking" data-del-booking="${b.id}" title="Löschen">✕</button>` : ''}
+      </div>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <div class="admin-booking-in">
           <span class="admin-booking-label">${t('checkin')}</span>
@@ -127,6 +131,7 @@ function renderAdminBookings(bookings) {
           <span class="admin-booking-date">${fmtDate(b.end)}</span>
         </div>
         <span class="admin-booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
+        ${b.guest_name ? `<span style="font-size:.75rem;color:var(--ink-soft)">👤 ${esc(b.guest_name)}</span>` : ''}
       </div>
       <div class="persons-editor">
         <span class="persons-label">👥 ${t('personsEdit')}:</span>
@@ -315,10 +320,10 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
     });
     const data = await res.json();
     const resultEl = document.getElementById('import-result');
-    const msg = t('importResult', data.matched, data.unmatched, data.noBooking);
+    const msg = t('importResult', data.created, data.updated, data.skipped);
     resultEl.className = `import-result ${data.unmatched + data.noBooking > 0 ? 'partial' : 'success'}`;
     resultEl.textContent = msg;
-    if (data.matched > 0) { showToast(`${data.matched} ${t('importPersons')} importiert ✓`); loadApartments(); }
+    if (data.created + data.updated > 0) { showToast(`${data.created + data.updated} ${t('importPersons')} importiert ✓`); loadApartments(); loadHouses(); }
   } catch(err) {
     document.getElementById('import-result').innerHTML =
       `<div style="color:var(--putzen);font-size:.82rem">${err.message}</div>`;
@@ -440,7 +445,6 @@ async function loadHouses() {
   document.getElementById('houses-tbody').innerHTML = allHouses.map(h => `
     <tr>
       <td><div class="apt-name-cell">${esc(h.name)}</div></td>
-      <td style="color:var(--ink-soft);font-size:.82rem">${esc(h.address||'–')}</td>
       <td style="font-size:.82rem">${h.total||0}</td>
       <td><button class="btn-sync" data-del-house="${h.id}">${t('btnDelete')}</button></td>
     </tr>`).join('')
@@ -537,6 +541,35 @@ async function loadApartments() {
   });
   apts.forEach(apt => attachNoteHandlers(apt));
 
+  // Manuelle Buchung löschen
+  document.querySelectorAll('[data-del-booking]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/bookings/${btn.dataset.delBooking}`, { method: 'DELETE' });
+      showToast(t('toastDeleted'));
+      loadApartments();
+    });
+  });
+
+  // Manuelle Buchung hinzufügen
+  document.querySelectorAll('[data-manual-apt]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const aptId = btn.dataset.manualApt;
+      const start = document.querySelector(`.manual-start[data-apt="${aptId}"]`).value;
+      const end   = document.querySelector(`.manual-end[data-apt="${aptId}"]`).value;
+      if (!start || !end) { showToast('Bitte An- und Abreise eintragen'); return; }
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const res = await fetch(`/api/apartments/${aptId}/bookings`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ start, end }),
+        });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        showToast(t('toastAdded'));
+        loadApartments();
+      } catch(err) { showToast(err.message); btn.disabled = false; btn.textContent = t('manualBookingAdd'); }
+    });
+  });
+
   // Personen speichern
   document.querySelectorAll('[data-save-booking]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -581,11 +614,10 @@ document.getElementById('add-house-form').addEventListener('submit', async e => 
   e.preventDefault();
   document.getElementById('house-form-error').textContent = '';
   const name    = document.getElementById('house-name').value.trim();
-  const address = document.getElementById('house-address').value.trim();
   try {
     const res = await fetch('/api/houses', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name, address: address||null }),
+      body: JSON.stringify({ name }),
     });
     if (!res.ok) { const d=await res.json(); throw new Error(d.error); }
     e.target.reset(); showToast(t('toastAdded')); loadHouses();

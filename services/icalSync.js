@@ -73,7 +73,7 @@ async function syncApartment(apartment) {
     // Personenangaben + Highlights vor dem Sync retten
     const { rows: existing } = await pool.query(
       `SELECT LEFT(start,10) as date, persons, highlighted_until
-       FROM bookings WHERE apartment_id=$1`,
+       FROM bookings WHERE apartment_id=$1 AND (source='ical' OR source IS NULL)`,
       [apartment.id]
     );
     const backup = {};
@@ -110,7 +110,7 @@ async function syncApartment(apartment) {
     );
 
     await client.query('BEGIN');
-    await client.query(`DELETE FROM bookings WHERE apartment_id=$1`, [apartment.id]);
+    await client.query(`DELETE FROM bookings WHERE apartment_id=$1 AND (source='ical' OR source IS NULL)`, [apartment.id]);
     for (const ev of events) {
       await client.query(
         `INSERT INTO bookings (apartment_id,uid,start,"end",summary) VALUES ($1,$2,$3,$4,$5)`,
