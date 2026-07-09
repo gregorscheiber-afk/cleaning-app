@@ -16,6 +16,7 @@ const cleaningsRouter   = require('./routes/cleanings');
 const notesRouter       = require('./routes/notes');
 const importRouter      = require('./routes/import');
 const bookingsRouter    = require('./routes/bookings');
+const planRouter        = require('./routes/plan');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ app.use('/api',            cleaningsRouter);
 app.use('/api',            notesRouter);
 app.use('/api',            importRouter);
 app.use('/api',            bookingsRouter);
+app.use('/api',            planRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/test-db', async (_req, res) => {
   try {
