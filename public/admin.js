@@ -41,6 +41,10 @@ function applyLabels() {
   document.getElementById('apt-pms').placeholder             = t('pmsCodePlaceholder');
   document.getElementById('btn-add-house').textContent       = t('btnAdd');
   document.getElementById('btn-add-apt').textContent         = t('btnAdd');
+  document.getElementById('lbl-panel-manage-apts').textContent = 'Apartments verwalten';
+  document.getElementById('th-manage-name').textContent        = t('thName');
+  document.getElementById('th-manage-house').textContent       = t('thHouse');
+  document.getElementById('th-manage-time').textContent        = t('cleanFrom');
   document.getElementById('modal-lbl-name').textContent      = t('thName');
   document.getElementById('modal-lbl-pms').textContent       = t('pmsCode');
   document.getElementById('modal-lbl-house').textContent     = t('thHouse');
@@ -222,7 +226,7 @@ document.getElementById('modal-save').addEventListener('click', async () => {
     if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
     showToast(t('toastSaved'));
     closeEditModal();
-    loadApartments(); loadHouses();
+    loadApartments(); loadManageApts(); loadHouses();
   } catch(err) { document.getElementById('modal-error').textContent = err.message; }
 });
 
@@ -385,6 +389,40 @@ document.getElementById('btn-structure-start').addEventListener('click', async (
   } finally { btn.disabled = false; btn.textContent = t('importStructureStart'); }
 });
 
+// ── Apartments Verwaltung (Bearbeiten/Löschen) ───────────
+async function loadManageApts() {
+  const apts = await (await fetch('/api/apartments')).json();
+  const houseMap = Object.fromEntries(allHouses.map(h => [h.id, h.name]));
+  const tbody = document.getElementById('manage-apt-tbody');
+  if (!apts.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = apts.map(apt => `
+    <tr>
+      <td><div style="font-size:.95rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div></td>
+      <td style="font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
+      <td style="font-size:.82rem;color:var(--ink-soft)">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="btn-edit" data-manage-edit="${apt.id}">${t('editApt')}</button>
+        <button class="btn-sync" data-manage-del="${apt.id}" style="color:var(--putzen)">${t('btnDelete')}</button>
+      </td>
+    </tr>`).join('');
+
+  tbody.querySelectorAll('[data-manage-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const apt = apts.find(a => a.id == btn.dataset.manageEdit);
+      if (apt) openEditModal(apt);
+    });
+  });
+  tbody.querySelectorAll('[data-manage-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/apartments/${btn.dataset.manageDel}`, { method: 'DELETE' });
+      showToast(t('toastDeleted')); loadApartments(); loadManageApts(); loadHouses();
+    });
+  });
+}
+
 // ── Häuser ────────────────────────────────────────────────
 async function loadHouses() {
   allHouses = (await (await fetch('/api/houses')).json());
@@ -439,15 +477,19 @@ async function loadApartments() {
           <tr>
             <td style="padding:.75rem 1.1rem;width:28%">
               <div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div>
-              <div style="font-size:.72rem;color:var(--ink-soft);margin-top:.2rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
+              <div style="display:flex;align-items:center;gap:.4rem;margin-top:.3rem">
+                <span style="font-size:.68rem;color:var(--ink-muted)">⏰ ${t('cleanFrom')}:</span>
+                <input type="time" step="300"
+                  class="apt-time-inline"
+                  data-apt-time="${apt.id}"
+                  value="${esc(apt.checkout_time||'09:30')}"
+                  style="background:var(--surface-3);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:.2rem .4rem;font-size:.8rem;font-weight:600;outline:none;cursor:pointer;width:80px"/>
+              </div>
             </td>
             <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
             <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
             <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
-            <td style="padding:.75rem 1.1rem .75rem .5rem;white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
-              <button class="btn-edit" data-edit="${apt.id}">${t('editApt')}</button>
-              <button class="btn-sync" data-del="${apt.id}" style="color:var(--putzen)">${t('btnDelete')}</button>
-            </td>
+            <td style="padding:.75rem 1.1rem"></td>
           </tr>
           <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
           <tr>
@@ -458,38 +500,30 @@ async function loadApartments() {
               </div>
             </td>
           </tr>
-          <tr>
-            <td colspan="5" style="padding:0">
-              <div class="manual-booking-form">
-                <div style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted)">${t('manualBooking')}</div>
-                <div style="font-size:.75rem;color:var(--ink-soft)">${t('manualBookingHint')}</div>
-                <div class="manual-booking-inputs">
-                  <input type="date" class="manual-start" data-apt="${apt.id}"/>
-                  <input type="date" class="manual-end"   data-apt="${apt.id}"/>
-                </div>
-                <button class="btn-manual-add" data-manual-apt="${apt.id}">${t('manualBookingAdd')}</button>
-              </div>
-            </td>
-          </tr>
+
         </table>
       </td>
     </tr>`).join('');
 
-  tbody.querySelectorAll('[data-edit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const apt = apts.find(a => a.id == btn.dataset.edit);
-      if (apt) openEditModal(apt);
-    });
-  });
-
-  tbody.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/apartments/${btn.dataset.del}`, { method: 'DELETE' });
-      showToast(t('toastDeleted')); loadApartments(); loadHouses();
-    });
-  });
-
   apts.forEach(apt => attachNoteHandlers(apt));
+
+  // Reinigungszeit direkt speichern
+  document.querySelectorAll('[data-apt-time]').forEach(input => {
+    input.addEventListener('change', async () => {
+      const id = input.dataset.aptTime;
+      const checkout_time = input.value || '09:30';
+      input.style.borderColor = 'var(--accent)';
+      try {
+        await fetch(`/api/apartments/${id}`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ checkout_time }),
+        });
+        showToast('⏰ Reinigungszeit gespeichert');
+        setTimeout(() => input.style.borderColor = '', 1500);
+        loadManageApts();
+      } catch { input.style.borderColor = 'var(--putzen)'; }
+    });
+  });
 
   document.querySelectorAll('[data-del-booking]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -498,23 +532,6 @@ async function loadApartments() {
     });
   });
 
-  document.querySelectorAll('[data-manual-apt]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const aptId = btn.dataset.manualApt;
-      const start = document.querySelector(`.manual-start[data-apt="${aptId}"]`).value;
-      const end   = document.querySelector(`.manual-end[data-apt="${aptId}"]`).value;
-      if (!start || !end) { showToast('Bitte An- und Abreise eintragen'); return; }
-      btn.disabled = true; btn.textContent = '…';
-      try {
-        const res = await fetch(`/api/apartments/${aptId}/bookings`, {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ start, end }),
-        });
-        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-        showToast(t('toastAdded')); loadApartments();
-      } catch(err) { showToast(err.message); btn.disabled = false; btn.textContent = t('manualBookingAdd'); }
-    });
-  });
 
   document.querySelectorAll('[data-save-booking]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -588,7 +605,7 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
       try { const d = await res.json(); msg = d.error || msg; } catch {}
       throw new Error(msg);
     }
-    e.target.reset(); showToast(t('toastAdded')); loadApartments(); loadHouses();
+    e.target.reset(); showToast(t('toastAdded')); loadApartments(); loadManageApts(); loadHouses();
   } catch(err) { document.getElementById('apt-form-error').textContent = err.message; }
 });
 
