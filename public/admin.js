@@ -488,9 +488,8 @@ async function loadApartments() {
         <table style="width:100%;border-collapse:collapse">
           <tr>
             <td style="padding:.75rem 1.1rem;width:28%">
-              <div class="apt-name-cell">${esc(apt.name)}</div>
-              ${apt.pms_code ? `<div style="font-size:.7rem;color:var(--accent);margin-top:.15rem">PMS: ${esc(apt.pms_code)}</div>` : ''}
-              <div style="font-size:.7rem;color:var(--ink-soft);margin-top:.1rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
+              <div style="font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:-.01em">${esc(apt.name)}</div>
+              <div style="font-size:.72rem;color:var(--ink-soft);margin-top:.2rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
             </td>
             <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
             <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
