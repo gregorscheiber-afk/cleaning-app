@@ -42,8 +42,11 @@ function statusLabel(s) {
 
 function renderBookings(bookings) {
   if (!bookings?.length) return '';
-  const rows = bookings.map(b => `
-    <div class="booking-row">
+  const rows = bookings.map(b => {
+    const isLM = b.highlighted_until && new Date() < new Date(b.highlighted_until);
+    return `
+    <div class="booking-row${isLM ? ' last-minute' : ''}">
+      ${isLM ? `<div style="grid-column:1/-1;margin-bottom:.2rem"><span class="last-minute-badge">${t('lastMinute')}</span></div>` : ''}
       <div class="booking-date-group">
         <span class="booking-date-label">${t('checkin')}</span>
         <span class="booking-date-value">${fmtDate(b.start)}</span>
@@ -54,7 +57,8 @@ function renderBookings(bookings) {
       </div>
       <span class="booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
       ${b.persons ? `<div class="booking-persons">👥 ${esc(b.persons)}</div>` : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   return `<div class="bookings-block"><div class="bookings-title">📅 ${t('upcomingBookings')}</div>${rows}</div>`;
 }
 

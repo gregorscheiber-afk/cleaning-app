@@ -67,7 +67,8 @@ async function initDb() {
 
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS checkout_time TEXT DEFAULT '09:30'`);
-  await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS persons       TEXT`);
+  await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS persons           TEXT`);
+  await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS highlighted_until TEXT`);
 
   console.log('Datenbank bereit.');
 }

@@ -64,7 +64,14 @@ const TRANSLATIONS = {
     checkoutTime: 'Cleaning time',
     checkoutTimePlaceholder: 'e.g. 09:30',
     cleanFrom: 'Cleaning from',
-    adults: 'Adults', children: 'Children', babies: 'Babies', personsEdit: 'Persons',
+    adults: 'Adults',
+    lastMinute: '🔔 New booking',
+    panelImportStructure: 'Import houses & apartments (Excel)',
+    importStructureHint: 'Excel with columns: House · Apartment · iCal URL · PMS Code. Existing entries will be updated.',
+    importStructureBtn: 'Download Excel template',
+    importStructureStart: 'Import houses & apartments',
+    importStructureResult: (hc,he,ac,ae) => `${hc} houses created · ${he} existing · ${ac} apartments created · ${ae} updated`,
+    importStructureCols: ['House','Apartment','iCal URL (optional)','PMS Code (optional)'], children: 'Children', babies: 'Babies', personsEdit: 'Persons',
 
 
     upcomingBookings: 'Yaklaşan rezervasyonlar',
@@ -94,7 +101,14 @@ const TRANSLATIONS = {
     checkoutTime: 'Temizlik saati',
     checkoutTimePlaceholder: 'örn. 09:30',
     cleanFrom: 'Temizlik başlangıcı',
-    adults: 'Yetişkin', children: 'Çocuk', babies: 'Bebek', personsEdit: 'Kişiler',
+    adults: 'Yetişkin',
+    lastMinute: '🔔 Yeni rezervasyon',
+    panelImportStructure: 'Ev & daire içe aktar (Excel)',
+    importStructureHint: 'Sütunlar: Ev · Daire · iCal URL · PMS Kodu.',
+    importStructureBtn: 'Excel şablonunu indir',
+    importStructureStart: 'Ev & daire içe aktar',
+    importStructureResult: (hc,he,ac,ae) => `${hc} yeni ev · ${he} mevcut · ${ac} yeni daire · ${ae} güncellendi`,
+    importStructureCols: ['Ev','Daire','iCal URL (isteğe bağlı)','PMS Kodu (isteğe bağlı)'], children: 'Çocuk', babies: 'Bebek', personsEdit: 'Kişiler',
 
 
     upcomingBookings: 'Nadolazeće rezervacije',
@@ -124,7 +138,14 @@ const TRANSLATIONS = {
     checkoutTime: 'Vrijeme čišćenja',
     checkoutTimePlaceholder: 'npr. 09:30',
     cleanFrom: 'Čišćenje od',
-    adults: 'Odrasli', children: 'Djeca', babies: 'Dojenče', personsEdit: 'Osobe',
+    adults: 'Odrasli',
+    lastMinute: '🔔 Nova rezervacija',
+    panelImportStructure: 'Uvezi kuće & apartmane (Excel)',
+    importStructureHint: 'Excel s kolonama: Kuća · Apartman · iCal URL · PMS Kod.',
+    importStructureBtn: 'Preuzmi Excel predložak',
+    importStructureStart: 'Uvezi kuće & apartmane',
+    importStructureResult: (hc,he,ac,ae) => `${hc} novih kuća · ${he} postojećih · ${ac} novih apartmana · ${ae} ažuriranih`,
+    importStructureCols: ['Kuća','Apartman','iCal URL (neobavezno)','PMS Kod (neobavezno)'], children: 'Djeca', babies: 'Dojenče', personsEdit: 'Osobe',
 
 
     upcomingBookings: 'Kommende Buchungen',
@@ -156,7 +177,14 @@ const TRANSLATIONS = {
     checkoutTime: 'Reinigungszeit',
     checkoutTimePlaceholder: 'z. B. 09:30',
     cleanFrom: 'Reinigung ab',
-    adults: 'Erw.', children: 'Kind', babies: 'Baby', personsEdit: 'Personen',
+    adults: 'Erw.',
+    lastMinute: '🔔 Neue Buchung',
+    panelImportStructure: 'Häuser & Apartments importieren (Excel)',
+    importStructureHint: 'Excel mit Spalten: Haus · Apartment · iCal URL · PMS Code. Bestehende Einträge werden aktualisiert, neue angelegt.',
+    importStructureBtn: 'Excel-Vorlage herunterladen',
+    importStructureStart: 'Häuser & Apartments importieren',
+    importStructureResult: (hc,he,ac,ae) => `${hc} Häuser neu · ${he} vorhanden · ${ac} Apartments neu · ${ae} aktualisiert`,
+    importStructureCols: ['Haus','Apartment','iCal URL (optional)','PMS Code (optional)'], children: 'Kind', babies: 'Baby', personsEdit: 'Personen',
 
 
     justNow: 'gerade eben', minutesAgo: m => `vor ${m} Min.`,

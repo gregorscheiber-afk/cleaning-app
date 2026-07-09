@@ -20,7 +20,12 @@ function applyLabels() {
   document.getElementById('lbl-panel-houses').textContent    = t('panelHouses');
   document.getElementById('lbl-panel-apts').textContent      = t('panelApts');
   document.getElementById('lbl-panel-import').textContent    = t('panelImport');
-  document.getElementById('lbl-import-hint').textContent     = t('importHint');
+  document.getElementById('lbl-import-hint').textContent          = t('importHint');
+  document.getElementById('lbl-panel-import-structure').textContent = t('panelImportStructure');
+  document.getElementById('lbl-import-structure-hint').textContent  = t('importStructureHint');
+  document.getElementById('lbl-structure-btn').textContent          = t('importBtn');
+  document.getElementById('btn-download-template').textContent      = t('importStructureBtn');
+  document.getElementById('btn-structure-start').textContent        = t('importStructureStart');
   document.getElementById('lbl-import-btn').textContent      = t('importBtn');
   document.getElementById('btn-import-start').textContent    = t('importStart');
   document.getElementById('lbl-panel-add-house').textContent = t('panelAddHouse');
@@ -107,8 +112,10 @@ function renderAdminBookings(bookings) {
   if (!bookings?.length) return `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noUpcoming')}</div>`;
   return bookings.map(b => {
     const p = parsePersons(b.persons);
+    const isLM = b.highlighted_until && new Date() < new Date(b.highlighted_until);
     return `
-    <div class="admin-booking-row" style="flex-direction:column;align-items:stretch">
+    <div class="admin-booking-row${isLM ? ' last-minute' : ''}" style="flex-direction:column;align-items:stretch">
+      ${isLM ? `<div style="margin-bottom:.4rem"><span class="last-minute-badge">${t('lastMinute')}</span></div>` : ''}
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <div class="admin-booking-in">
           <span class="admin-booking-label">${t('checkin')}</span>
@@ -316,6 +323,115 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
     document.getElementById('import-result').innerHTML =
       `<div style="color:var(--putzen);font-size:.82rem">${err.message}</div>`;
   } finally { btn.disabled = false; btn.textContent = t('importStart'); }
+});
+
+// ── Struktur-Import ──────────────────────────────────────
+let structureRows = [];
+
+document.getElementById('btn-download-template').addEventListener('click', () => {
+  const cols = t('importStructureCols');
+  const ws = XLSX.utils.aoa_to_sheet([
+    cols,
+    ['Jordans Lodge', 'Alpenrose', 'https://ical.url/...', 'LODG1'],
+    ['Jordans Lodge', 'Enzian',    '',                      'LODG2'],
+    ['MYALPS Mühlhof','Studio',   '',                      'Studi'],
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Struktur');
+  XLSX.writeFile(wb, 'myalps_struktur_vorlage.xlsx');
+});
+
+document.getElementById('structure-file-input').addEventListener('change', () => {
+  const file = document.getElementById('structure-file-input').files[0];
+  if (!file) return;
+  document.getElementById('structure-filename').textContent = file.name;
+  document.getElementById('structure-result').innerHTML = '';
+  structureRows = [];
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: 'array' });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+
+      // Kopfzeile suchen
+      let headerRow = -1;
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const first = String(row?.[0] || '').toLowerCase();
+        if (first === 'haus' || first === 'house' || first === 'kuća' || first === 'ev') {
+          headerRow = i; break;
+        }
+      }
+      if (headerRow === -1) { headerRow = 0; } // erste Zeile als Header nehmen
+
+      structureRows = [];
+      for (let i = headerRow + 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || !row[0]) continue;
+        structureRows.push({
+          haus:      String(row[0] || '').trim(),
+          apartment: String(row[1] || '').trim(),
+          ical_url:  String(row[2] || '').trim(),
+          pms_code:  String(row[3] || '').trim(),
+        });
+      }
+
+      if (!structureRows.length) {
+        document.getElementById('structure-preview').innerHTML =
+          `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
+        return;
+      }
+
+      const cols = t('importStructureCols');
+      const previewRows = structureRows.slice(0,6).map(r => `
+        <tr>
+          <td>${esc(r.haus)}</td>
+          <td>${esc(r.apartment)}</td>
+          <td style="color:var(--ink-soft);font-size:.75rem">${r.ical_url ? '✓' : '–'}</td>
+          <td style="color:var(--accent)">${esc(r.pms_code) || '–'}</td>
+        </tr>`).join('');
+
+      document.getElementById('structure-preview').innerHTML = `
+        <div class="section-label" style="margin-bottom:.5rem">${t('importPreview')} (${structureRows.length})</div>
+        <div class="import-preview">
+          <table>
+            <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+            <tbody>${previewRows}</tbody>
+          </table>
+        </div>`;
+      document.getElementById('btn-structure-start').style.display = 'block';
+    } catch(err) {
+      document.getElementById('structure-preview').innerHTML =
+        `<div style="color:var(--putzen);font-size:.82rem">Fehler: ${err.message}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('btn-structure-start').addEventListener('click', async () => {
+  if (!structureRows.length) return;
+  const btn = document.getElementById('btn-structure-start');
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await fetch('/api/import-structure', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ rows: structureRows }),
+    });
+    const data = await res.json();
+    const resultEl = document.getElementById('structure-result');
+    resultEl.className = 'import-result success';
+    resultEl.textContent = t('importStructureResult', data.housesCreated, data.housesExisting, data.aptsCreated, data.aptsExisting);
+    showToast(`${data.housesCreated + data.aptsCreated} neue Einträge angelegt ✓`);
+    loadHouses();
+    loadApartments();
+  } catch(err) {
+    document.getElementById('structure-result').textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('importStructureStart');
+  }
 });
 
 // ── Häuser ────────────────────────────────────────────────

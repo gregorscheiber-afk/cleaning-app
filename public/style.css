@@ -1276,3 +1276,35 @@ main {
 
 .persons-save-btn:hover { background: var(--accent-hover); }
 .persons-save-btn:disabled { opacity: .5; cursor: default; }
+
+/* ── Last-Minute Buchungs-Highlight ── */
+.booking-row.last-minute {
+  background: rgba(217, 107, 60, .12);
+  border: 1px solid rgba(217, 107, 60, .35);
+}
+
+.admin-booking-row.last-minute {
+  background: rgba(217, 107, 60, .1);
+  border: 1px solid rgba(217, 107, 60, .35);
+}
+
+.last-minute-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: var(--putzen-bg);
+  color: var(--putzen);
+  border: 1px solid rgba(217,107,60,.4);
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .2rem .55rem;
+  white-space: nowrap;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .65; }
+}
