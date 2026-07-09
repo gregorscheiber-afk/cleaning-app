@@ -33,6 +33,27 @@ router.post('/import-bookings', async (req, res, next) => {
     const affectedApts = new Set();
     const details = [];
 
+    // Vor dem Import: nächste bekannte Buchung pro Apartment merken
+    const nowIso = new Date().toISOString();
+    const prevNext = {}; // aptId → frühestes zukünftiges Startdatum
+    for (const apt of Object.values(aptByCode)) {
+      const { rows } = await pool.query(
+        `SELECT LEFT(start,10) as d FROM bookings
+         WHERE apartment_id=$1 AND start>$2
+         ORDER BY start ASC LIMIT 1`,
+        [apt.id, nowIso]
+      );
+      prevNext[apt.id] = rows[0]?.d || null;
+    }
+
+    // Alle bestehenden Highlights löschen – frischer Start bei jedem Upload
+    for (const apt of Object.values(aptByCode)) {
+      await pool.query(
+        `UPDATE bookings SET highlighted_until=NULL WHERE apartment_id=$1`,
+        [apt.id]
+      );
+    }
+
     for (const row of importRows) {
       const code      = String(row.zimmer    || '').trim().toLowerCase();
       const guestName = String(row.gast      || '').trim() || null;
@@ -49,24 +70,19 @@ router.post('/import-bookings', async (req, res, next) => {
         continue;
       }
 
-      // Existierende Buchung für diesen Zeitraum suchen (iCal oder Excel)
       const { rows: existing } = await pool.query(
-        `SELECT id, source FROM bookings
-         WHERE apartment_id=$1 AND LEFT(start,10)=$2`,
+        `SELECT id FROM bookings WHERE apartment_id=$1 AND LEFT(start,10)=$2`,
         [apt.id, start]
       );
 
       if (existing.length) {
-        // Vorhandene Buchung aktualisieren (Daten aus Excel übernehmen)
         await pool.query(
-          `UPDATE bookings SET
-            "end"=$1, guest_name=$2, persons=$3, source='excel', synced_at=NOW()
+          `UPDATE bookings SET "end"=$1, guest_name=$2, persons=$3, source='excel', synced_at=NOW()
            WHERE id=$4`,
           [end, guestName, persons, existing[0].id]
         );
         updated++;
       } else {
-        // Neue Buchung anlegen
         const uid = `excel-${apt.id}-${start}`;
         await pool.query(
           `INSERT INTO bookings (apartment_id, uid, start, "end", guest_name, persons, source)
@@ -80,8 +96,27 @@ router.post('/import-bookings', async (req, res, next) => {
       details.push({ zimmer: row.zimmer, apt: apt.name, start, end, status: 'ok' });
     }
 
-    // Status aller betroffenen Apartments neu berechnen
+    // Nach dem Import: neue frühere Buchungen highlighten
     for (const aptId of affectedApts) {
+      const { rows: newNext } = await pool.query(
+        `SELECT id, LEFT(start,10) as d FROM bookings
+         WHERE apartment_id=$1 AND start>$2
+         ORDER BY start ASC LIMIT 1`,
+        [aptId, nowIso]
+      );
+      const newNextDate = newNext[0]?.d || null;
+      const oldNextDate = prevNext[aptId] || null;
+
+      // Nur highlighten wenn eine neue Buchung früher ist als die vorherige nächste
+      if (newNextDate && (!oldNextDate || newNextDate < oldNextDate)) {
+        const highlightedUntil = `${newNextDate}T19:00:00`;
+        await pool.query(
+          `UPDATE bookings SET highlighted_until=$1
+           WHERE id=$2`,
+          [highlightedUntil, newNext[0].id]
+        );
+      }
+
       await recomputeStatus(aptId);
     }
 

@@ -218,8 +218,9 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   if (!editingAptId) return;
   const name     = document.getElementById('modal-apt-name').value.trim();
   const ical_url = document.getElementById('modal-apt-ical').value.trim();
-  const pms_code = document.getElementById('modal-apt-pms').value.trim();
-  const house_id = document.getElementById('modal-apt-house').value;
+  const pms_code      = document.getElementById('modal-apt-pms').value.trim();
+  const checkout_time = document.getElementById('modal-apt-time').value || '09:30';
+  const house_id      = document.getElementById('modal-apt-house').value;
   document.getElementById('modal-error').textContent = '';
   try {
     const res = await fetch(`/api/apartments/${editingAptId}`, {
