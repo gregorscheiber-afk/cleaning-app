@@ -1,39 +1,24 @@
+const listEl  = document.getElementById('list');
 const toastEl = document.getElementById('toast');
-let lastTs = null;
-let allHouses = [];
+
+let selectedHouse = null;
+let activeFilter  = 'all';
+let allApartments = [];
+
+function applyLabels() {
+  document.getElementById('lbl-role').textContent  = t('roleClean');
+  document.documentElement.lang = localStorage.getItem('ma_lang') || 'de';
+}
 
 function showToast(msg) {
   toastEl.textContent = msg;
   toastEl.classList.add('show');
-  setTimeout(() => toastEl.classList.remove('show'), 2500);
+  setTimeout(() => toastEl.classList.remove('show'), 2400);
 }
 
-function applyLabels() {
-  document.getElementById('lbl-role').textContent            = t('roleAdmin');
-  document.getElementById('lbl-clean').textContent           = t('roleClean');
-  document.getElementById('lbl-stat-putzen').textContent     = t('statTodo');
-  document.getElementById('lbl-stat-sauber').textContent     = t('statClean');
-  document.getElementById('lbl-stat-belegt').textContent     = t('statOccupied');
-  document.getElementById('lbl-panel-notif').textContent     = t('panelNotif');
-  document.getElementById('lbl-panel-houses').textContent    = t('panelHouses');
-  document.getElementById('lbl-panel-apts').textContent      = t('panelApts');
-  document.getElementById('lbl-panel-add-house').textContent = t('panelAddHouse');
-  document.getElementById('lbl-panel-add-apt').textContent   = t('panelAddApt');
-  document.getElementById('th-name').textContent             = t('thName');
-  document.getElementById('th-name-h').textContent           = t('thName');
-  document.getElementById('th-house').textContent            = t('thHouse');
-  document.getElementById('th-status').textContent           = t('thStatus');
-  document.getElementById('th-checkout').textContent         = t('thCheckout');
-  document.getElementById('house-name').placeholder          = t('houseName');
-  document.getElementById('house-address').placeholder       = t('houseAddress');
-  document.getElementById('apt-name').placeholder            = t('aptNamePlaceholder');
-  document.getElementById('apt-ical').placeholder            = t('icalPlaceholder');
-  document.getElementById('btn-add-house').textContent       = t('btnAdd');
-  document.getElementById('btn-add-apt').textContent         = t('btnAdd');
-  document.documentElement.lang = localStorage.getItem('ma_lang') || 'de';
+function esc(s) {
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
 }
-
-function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function fmtDate(iso) {
   if (!iso) return '–';
@@ -42,277 +27,211 @@ function fmtDate(iso) {
   });
 }
 
-function fmtDateTime(iso) {
-  if (!iso) return '–';
-  return new Date(iso).toLocaleString(document.documentElement.lang, {
-    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-  });
-}
-
-function fmtAge(iso) {
-  if (!iso) return '';
-  const diff = Math.round((Date.now() - new Date(iso)) / 60000);
-  return diff < 1 ? t('justNow') : diff < 60 ? t('minutesAgo', diff) : fmtDateTime(iso);
-}
-
 function nightsBetween(start, end) {
   return Math.round((new Date(end) - new Date(start)) / 86400000);
 }
 
 function statusLabel(s) {
-  return { belegt: t('statusBelegt'), muss_geputzt_werden: t('statusPutzen'), sauber: t('statusSauber') }[s] || s;
+  return {
+    belegt:              t('statusBelegt'),
+    muss_geputzt_werden: t('statusPutzen'),
+    sauber:              t('statusSauber'),
+  }[s] || s;
 }
 
-// ── Buchungen-Panel für Admin ────────────────────────────
-function renderAdminBookings(bookings) {
-  if (!bookings || !bookings.length) {
-    return `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noUpcoming')}</div>`;
-  }
-  return bookings.map(b => {
-    const nights = nightsBetween(b.start, b.end);
+function renderBookings(bookings) {
+  if (!bookings?.length) return '';
+  const rows = bookings.map(b => {
+    const isLM = b.highlighted_until && new Date() < new Date(b.highlighted_until);
     return `
-      <div class="admin-booking-row">
-        <div class="admin-booking-in">
-          <span class="admin-booking-label">${t('checkin')}</span>
-          <span class="admin-booking-date">${fmtDate(b.start)}</span>
-        </div>
-        <span class="admin-booking-arrow">→</span>
-        <div class="admin-booking-out">
-          <span class="admin-booking-label">${t('checkout2')}</span>
-          <span class="admin-booking-date">${fmtDate(b.end)}</span>
-        </div>
-        <span class="admin-booking-nights">${t('night', nights)}</span>
-      </div>`;
-  }).join('');
-}
-
-// ── Notizen-Panel ────────────────────────────────────────
-function renderNotesPanel(apt) {
-  const notes = (apt.notes || []).map(n => `
-    <div class="note-row">
-      <span class="note-row-text">${esc(n.message)}</span>
-      <button class="note-del-btn" data-del-note="${n.id}">✕</button>
-    </div>`).join('');
-
-  return `
-    <div class="notes-panel" id="notes-panel-${apt.id}">
-      <div class="notes-panel-title">${t('notesTitle')}</div>
-      <div class="note-list" id="note-list-${apt.id}">
-        ${notes || `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noteEmpty')}</div>`}
+    <div class="booking-row${isLM ? ' last-minute' : ''}">
+      ${isLM ? `<div style="grid-column:1/-1;margin-bottom:.2rem"><span class="last-minute-badge">${t('lastMinute')}</span></div>` : ''}
+      <div class="booking-date-group">
+        <span class="booking-date-label">${t('checkin')}</span>
+        <span class="booking-date-value">${fmtDate(b.start)}</span>
       </div>
-      <div class="note-add-row">
-        <input class="note-input" id="note-input-${apt.id}" type="text"
-               placeholder="${t('notePlaceholder')}" maxlength="120"/>
-        <button class="note-add-btn" data-apt-id="${apt.id}">${t('noteAdd')}</button>
+      <div class="booking-date-group">
+        <span class="booking-date-label">${t('checkout2')}</span>
+        <span class="booking-date-value">${fmtDate(b.end)}</span>
       </div>
-    </div>
-    <div class="admin-bookings-panel">
-      <div class="admin-bookings-title">📅 ${t('upcomingBookings')}</div>
-      ${renderAdminBookings(apt.upcoming_bookings)}
+      <span class="booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
+      ${b.persons   ? `<div class="booking-persons">👥 ${esc(b.persons)}</div>` : ''}
+      ${b.guest_name ? `<div style="font-size:.72rem;color:var(--ink-soft);grid-column:1/-1">👤 ${esc(b.guest_name)}</div>` : ''}
     </div>`;
+  }).join('');
+  return `<div class="bookings-block"><div class="bookings-title">📅 ${t('upcomingBookings')}</div>${rows}</div>`;
 }
 
-function attachNoteHandlers(apt) {
-  const addBtn = document.querySelector(`[data-apt-id="${apt.id}"].note-add-btn`);
-  const input  = document.getElementById(`note-input-${apt.id}`);
-  if (!addBtn || !input) return;
+// ── Hausauswahl ──────────────────────────────────────────
+async function showHouseScreen() {
+  document.getElementById('house-overlay')?.remove();
+  let houses = [];
+  try { houses = await (await fetch('/api/houses')).json(); } catch {}
 
-  const doAdd = async () => {
-    const msg = input.value.trim();
-    if (!msg) return;
-    addBtn.textContent = '…';
-    addBtn.disabled = true;
-    try {
-      const res = await fetch(`/api/apartments/${apt.id}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg }),
-      });
-      if (!res.ok) throw new Error();
-      input.value = '';
-      showToast(t('toastAdded'));
-      loadApartments();
-    } catch {
-      showToast(t('toastError'));
-    } finally {
-      addBtn.textContent = t('noteAdd');
-      addBtn.disabled = false;
-    }
-  };
-  addBtn.addEventListener('click', doAdd);
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+  const overlay = document.createElement('div');
+  overlay.id = 'house-overlay';
+  const cards = houses.length
+    ? houses.map(h => `
+        <button class="house-card" data-id="${h.id}" data-name="${esc(h.name)}">
+          <div class="house-card-icon">🏠</div>
+          <div class="house-card-body">
+            <div class="house-card-name">${esc(h.name)}</div>
+            ${h.address ? `<div class="house-card-address">${esc(h.address)}</div>` : ''}
+            <div class="house-card-meta">
+              <span class="house-pill all">${t('aptCount', h.total || 0)}</span>
+              ${h.needs_cleaning > 0 ? `<span class="house-pill needs">${t('needsCleaning', h.needs_cleaning)}</span>` : ''}
+            </div>
+          </div>
+          <div class="house-card-arrow">›</div>
+        </button>`).join('')
+    : `<div class="house-empty">${t('noHouses')}</div>`;
 
-  document.querySelectorAll(`#notes-panel-${apt.id} [data-del-note]`).forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/notes/${btn.dataset.delNote}`, { method: 'DELETE' });
-      showToast(t('toastDeleted'));
-      loadApartments();
+  overlay.innerHTML = `
+    <div class="house-screen">
+      <div class="house-screen-header">
+        <div class="house-screen-title">${t('selectHouse')}</div>
+        <div class="house-screen-hint">${t('selectHouseHint')}</div>
+      </div>
+      <div class="house-card-list">${cards}</div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.querySelectorAll('.house-card').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedHouse = { id: btn.dataset.id, name: btn.dataset.name };
+      overlay.classList.add('fade-out');
+      setTimeout(() => { overlay.remove(); showHouseHeader(); loadApartments(); }, 220);
     });
   });
 }
 
-// ── Häuser ───────────────────────────────────────────────
-async function loadHouses() {
-  allHouses = await (await fetch('/api/houses')).json();
-
-  document.getElementById('houses-tbody').innerHTML = allHouses.map(h => `
-    <tr>
-      <td><div class="apt-name-cell">${esc(h.name)}</div></td>
-      <td style="color:var(--ink-soft);font-size:.82rem">${esc(h.address || '–')}</td>
-      <td style="font-size:.82rem">${h.total || 0}</td>
-      <td><button class="btn-sync" data-del-house="${h.id}">${t('btnDelete')}</button></td>
-    </tr>`).join('')
-    || `<tr><td colspan="4" style="color:var(--ink-muted);padding:1.1rem">${t('noHousesAdmin')}</td></tr>`;
-
-  document.querySelectorAll('[data-del-house]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/houses/${btn.dataset.delHouse}`, { method: 'DELETE' });
-      showToast(t('toastDeleted'));
-      loadHouses(); loadApartments();
-    });
+function showHouseHeader() {
+  document.getElementById('house-header')?.remove();
+  const el = document.createElement('div');
+  el.id = 'house-header';
+  el.innerHTML = `
+    <button class="btn-back" id="btn-back-houses">${t('backToHouses')}</button>
+    <div class="current-house-label">🏠 <span>${esc(selectedHouse?.name || '')}</span></div>`;
+  document.querySelector('main').insertBefore(el, document.querySelector('main').firstChild);
+  document.getElementById('btn-back-houses').addEventListener('click', () => {
+    document.getElementById('house-header')?.remove();
+    document.getElementById('status-filter')?.remove();
+    listEl.innerHTML = '';
+    document.getElementById('lbl-section').textContent = '';
+    showHouseScreen();
   });
-
-  document.getElementById('apt-house').innerHTML =
-    `<option value="">${t('houseSelect')}</option>` +
-    allHouses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
-
-  document.getElementById('filter-house').innerHTML =
-    `<option value="">${t('allHouses')}</option>` +
-    allHouses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
+  document.getElementById('lbl-section').textContent = t('sectionTodo');
 }
 
-// ── Apartments ───────────────────────────────────────────
+function showFilterTabs() {
+  document.getElementById('status-filter')?.remove();
+  const tabs = [
+    { key: 'all',                 label: t('statusAll') },
+    { key: 'muss_geputzt_werden', label: t('statusPutzen') },
+    { key: 'sauber',              label: t('statusSauber') },
+    { key: 'belegt',              label: t('statusBelegt') },
+  ];
+  const el = document.createElement('div');
+  el.id = 'status-filter';
+  el.className = 'status-tabs';
+  el.innerHTML = tabs.map(tab => `
+    <button class="status-tab ${activeFilter === tab.key ? 'active' : ''}" data-filter="${tab.key}">
+      ${tab.label}
+    </button>`).join('');
+  listEl.parentNode.insertBefore(el, listEl);
+  el.querySelectorAll('.status-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.dataset.filter;
+      showFilterTabs();
+      renderFiltered();
+    });
+  });
+}
+
 async function loadApartments() {
-  const houseId = document.getElementById('filter-house').value;
-  const url = '/api/apartments' + (houseId ? `?house_id=${houseId}` : '');
-  const apts = await (await fetch(url)).json();
+  if (!selectedHouse) return;
+  try {
+    allApartments = await (await fetch(`/api/apartments?house_id=${selectedHouse.id}`)).json();
+    showFilterTabs();
+    renderFiltered();
+  } catch {
+    listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>${t('connError')}</p></div>`;
+  }
+}
 
-  const all = houseId ? await (await fetch('/api/apartments')).json() : apts;
-  const c = { muss_geputzt_werden: 0, sauber: 0, belegt: 0 };
-  all.forEach(a => { if (c[a.status] !== undefined) c[a.status]++; });
-  document.getElementById('stat-putzen').textContent = c.muss_geputzt_werden;
-  document.getElementById('stat-sauber').textContent  = c.sauber;
-  document.getElementById('stat-belegt').textContent  = c.belegt;
+function renderFiltered() {
+  const filtered = activeFilter === 'all'
+    ? allApartments
+    : allApartments.filter(a => a.status === activeFilter);
+  render(filtered);
+}
 
-  const houseMap = Object.fromEntries(allHouses.map(h => [h.id, h.name]));
-  const tbody = document.getElementById('apt-tbody');
-
-  if (!apts.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
+function render(apartments) {
+  if (!apartments.length) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">${t('emptyTitle')}</div>
+        <p>${t('emptyText').replace('\n', '<br>')}</p>
+      </div>`;
     return;
   }
 
-  tbody.innerHTML = apts.map(apt => `
-    <tr>
-      <td colspan="5" style="padding:0">
-        <table style="width:100%;border-collapse:collapse">
-          <tr>
-            <td style="padding:.75rem 1.1rem;width:28%">
-              <div class="apt-name-cell">${esc(apt.name)}</div>
-              ${apt.last_sync_error ? `<div class="sync-error">⚠ ${esc(apt.last_sync_error)}</div>` : ''}
-            </td>
-            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id] || '–')}</td>
-            <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
-            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
-            <td style="padding:.75rem 1.1rem .75rem .5rem;white-space:nowrap">
-              <button class="btn-sync" data-sync="${apt.id}">${t('btnSync')}</button>
-              <button class="btn-sync" data-del="${apt.id}" style="color:var(--putzen);margin-left:4px">${t('btnDelete')}</button>
-            </td>
-          </tr>
-          <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
-        </table>
-      </td>
-    </tr>`).join('');
+  listEl.innerHTML = apartments.map(apt => {
+    const notes = (apt.notes || []).map(n => `
+      <div class="apt-note">
+        <span class="apt-note-icon">${t('noteHint')}</span>
+        <span>${esc(n.message)}</span>
+      </div>`).join('');
 
-  tbody.querySelectorAll('[data-sync]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.textContent = '…';
-      await fetch(`/api/apartments/${btn.dataset.sync}/sync`, { method: 'POST' });
-      loadApartments();
-    });
+    return `
+      <div class="apt-card" style="flex-wrap:wrap;gap:.6rem">
+        <div class="apt-card-top">
+          <div class="apt-card-left" style="flex:1;min-width:0">
+            <div class="apt-name">${esc(apt.name)}</div>
+            <div style="margin-top:.3rem">
+              <span class="badge ${apt.status}">${statusLabel(apt.status)}</span>
+            </div>
+            ${apt.checkout_time ? `<div style="font-size:.72rem;color:var(--ink-soft);margin-top:.3rem">⏰ ${t('cleanFrom')}: <strong style="color:var(--ink)">${esc(apt.checkout_time)} Uhr</strong></div>` : ''}
+          </div>
+          ${apt.status === 'muss_geputzt_werden'
+            ? `<button class="btn-confirm" data-id="${apt.id}" style="align-self:flex-start">${t('btnDone')}</button>`
+            : ''}
+        </div>
+        ${notes ? `<div class="apt-card-bottom"><div class="apt-notes">${notes}</div></div>` : ''}
+        <div class="apt-card-bottom">${renderBookings(apt.upcoming_bookings)}</div>
+      </div>`;
+  }).join('');
+
+  listEl.querySelectorAll('.btn-confirm').forEach(btn => {
+    btn.addEventListener('click', () => confirmClean(btn));
   });
-
-  tbody.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/apartments/${btn.dataset.del}`, { method: 'DELETE' });
-      showToast(t('toastDeleted'));
-      loadApartments(); loadHouses();
-    });
-  });
-
-  apts.forEach(apt => attachNoteHandlers(apt));
 }
 
-// ── Benachrichtigungen ───────────────────────────────────
-async function loadNotifications() {
-  const url = lastTs ? `/api/notifications?since=${encodeURIComponent(lastTs)}` : '/api/notifications';
-  const items = await (await fetch(url)).json();
-  if (items.length > 0) {
-    if (lastTs) { showToast(items[0].message); loadApartments(); loadHouses(); }
-    lastTs = items[0].created_at;
+async function confirmClean(btn) {
+  btn.disabled = true;
+  btn.textContent = t('saving');
+  try {
+    const res = await fetch(`/api/apartments/${btn.dataset.id}/confirm-clean`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cleaner_name: '–' }),
+    });
+    if (!res.ok) throw new Error();
+    showToast(t('toastConfirmed'));
+    loadApartments();
+  } catch {
+    btn.disabled = false;
+    btn.textContent = t('btnDone');
+    showToast(t('toastError'));
   }
-  if (!lastTs) lastTs = new Date().toISOString();
-  const all = await (await fetch('/api/notifications')).json();
-  document.getElementById('notifications').innerHTML = all.slice(0, 12).map(n => `
-    <div class="notif-item">
-      <div class="notif-dot"></div>
-      <div class="notif-text">${esc(n.message)}</div>
-      <div class="notif-time">${fmtAge(n.created_at)}</div>
-    </div>`).join('')
-    || `<div style="padding:1.1rem;color:var(--ink-muted);font-size:.85rem">${t('noNotifs')}</div>`;
 }
 
-// ── Formulare ────────────────────────────────────────────
-document.getElementById('add-house-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  document.getElementById('house-form-error').textContent = '';
-  const name    = document.getElementById('house-name').value.trim();
-  const address = document.getElementById('house-address').value.trim();
-  try {
-    const res = await fetch('/api/houses', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, address: address || null }),
-    });
-    if (!res.ok) {
-      let msg = `Server-Fehler ${res.status}`;
-      try { const d = await res.json(); msg = d.error || msg; } catch {}
-      throw new Error(msg);
-    }
-    e.target.reset(); showToast(t('toastAdded')); loadHouses();
-  } catch (err) { document.getElementById('house-form-error').textContent = err.message; }
-});
-
-document.getElementById('add-apt-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  document.getElementById('apt-form-error').textContent = '';
-  const name     = document.getElementById('apt-name').value.trim();
-  const ical_url = document.getElementById('apt-ical').value.trim();
-  const house_id = document.getElementById('apt-house').value;
-  try {
-    const res = await fetch('/api/apartments', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, ical_url: ical_url || null, house_id: house_id || null }),
-    });
-    if (!res.ok) {
-      let msg = `Server-Fehler ${res.status}`;
-      try { const d = await res.json(); msg = d.error || msg; } catch {}
-      throw new Error(msg);
-    }
-    e.target.reset(); showToast(t('toastAdded')); loadApartments(); loadHouses();
-  } catch (err) { document.getElementById('apt-form-error').textContent = err.message; }
-});
-
-document.getElementById('filter-house').addEventListener('change', loadApartments);
 document.getElementById('btn-lang').addEventListener('click', () => {
   localStorage.removeItem('ma_lang'); location.reload();
 });
 
-// ── Start ────────────────────────────────────────────────
-initLangScreen(async () => {
+initLangScreen(() => {
   applyLabels();
-  await loadHouses();
-  loadApartments();
-  loadNotifications();
-  setInterval(loadApartments,    30000);
-  setInterval(loadNotifications,  8000);
+  showHouseScreen();
+  setInterval(() => { if (selectedHouse) loadApartments(); }, 20000);
 });
