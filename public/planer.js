@@ -51,8 +51,13 @@ function esc(s) { if(!s) return ''; const d=document.createElement('div'); d.tex
 async function loadHouses(data) {
   if (isMainstreet) return;
   const current = houseFilter.value;
+  // Nur Häuser zeigen die tatsächlich Apartments in diesem Plan haben
+  const aptHouseIds = new Set(
+    (data.apartments || []).map(a => String(a.house_id)).filter(Boolean)
+  );
+  const relevantHouses = (data.houses || []).filter(h => aptHouseIds.has(String(h.id)));
   houseFilter.innerHTML = '<option value="">Alle Häuser</option>';
-  (data.houses || []).forEach(h => {
+  relevantHouses.forEach(h => {
     const opt = document.createElement('option');
     opt.value = h.id; opt.textContent = h.name;
     if (String(h.id) === current) opt.selected = true;
@@ -254,7 +259,7 @@ async function checkCleaningAlert() {
   const container = document.getElementById('cleaning-alert-container');
   if (!container) return;
   try {
-    const res = await fetch('/api/cleaning-alert');
+    const res = await fetch(`/api/cleaning-alert?plan=${planType}`);
     const apts = await res.json();
     if (!apts.length) { container.innerHTML = ''; return; }
 

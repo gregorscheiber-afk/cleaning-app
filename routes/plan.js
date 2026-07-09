@@ -59,10 +59,10 @@ router.get('/plan', async (req, res, next) => {
   } catch(e) { next(e); }
 });
 
-// GET /api/cleaning-alert – Apartments mit heutiger Anreise die noch nicht sauber sind
-router.get('/cleaning-alert', async (_req, res, next) => {
+// GET /api/cleaning-alert?plan=wiwa|mainstreet
+router.get('/cleaning-alert', async (req, res, next) => {
   try {
-    const rows = await getUncleanBeforeCheckin();
+    const rows = await getUncleanBeforeCheckin(req.query.plan || 'wiwa');
     res.json(rows);
   } catch(e) { next(e); }
 });
