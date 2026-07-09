@@ -10,6 +10,7 @@ if (!process.env.DATABASE_URL) {
 
 const { initDb }        = require('./db');
 const { recomputeAll }  = require('./services/icalSync');
+const { sendCleaningAlert } = require('./services/cleaningAlert');
 const housesRouter      = require('./routes/houses');
 const apartmentsRouter  = require('./routes/apartments');
 const cleaningsRouter   = require('./routes/cleanings');

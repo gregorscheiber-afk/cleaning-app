@@ -250,5 +250,32 @@ btnToday.addEventListener('click', () => {
   loadPlan();
 });
 
+async function checkCleaningAlert() {
+  const container = document.getElementById('cleaning-alert-container');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/cleaning-alert');
+    const apts = await res.json();
+    if (!apts.length) { container.innerHTML = ''; return; }
+
+    const list = apts.map(a =>
+      `${a.house_name ? '<strong>' + esc(a.house_name) + '</strong> – ' : ''}${esc(a.name)}`
+    ).join(' &nbsp;·&nbsp; ');
+
+    container.innerHTML = `
+      <div class="cleaning-alert-banner">
+        <div class="cleaning-alert-icon">⚠️</div>
+        <div class="cleaning-alert-text">
+          <div class="cleaning-alert-title">Reinigungsalarm – Anreise heute, noch nicht sauber!</div>
+          <div class="cleaning-alert-list">${list}</div>
+        </div>
+      </div>`;
+  } catch { /* still ignore errors */ }
+}
+
 // Start
-initLangScreen(() => loadPlan());
+initLangScreen(() => {
+  loadPlan();
+  checkCleaningAlert();
+  setInterval(checkCleaningAlert, 5 * 60 * 1000); // alle 5 Min prüfen
+});

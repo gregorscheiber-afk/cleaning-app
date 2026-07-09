@@ -1467,3 +1467,77 @@ main {
   25%      { transform: translateX(-8px); }
   75%      { transform: translateX(8px); }
 }
+
+/* ── Verwaltungs-Panels (heller hervorgehoben) ── */
+.panel-mgmt {
+  background: #242b24;
+  border-color: #363e36;
+}
+
+.panel-mgmt .panel-header {
+  background: #2a322a;
+  border-bottom-color: #363e36;
+}
+
+.panel-mgmt .panel-title {
+  color: #a0b09a;
+}
+
+.panel-mgmt .apt-table {
+  background: #242b24;
+}
+
+.panel-mgmt .apt-table th {
+  background: #2a322a;
+  color: #7a8a74;
+}
+
+.panel-mgmt .apt-table tr:hover td {
+  background: #2a322a;
+}
+
+.panel-mgmt .add-form input,
+.panel-mgmt .add-form select {
+  background: #2a322a;
+  border-color: #363e36;
+}
+
+.panel-mgmt .import-hint {
+  color: #7a8a74;
+}
+
+/* ── Reinigungsalarm Banner ── */
+.cleaning-alert-banner {
+  background: rgba(217,107,60,.15);
+  border: 1px solid rgba(217,107,60,.4);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  margin: .65rem .9rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.cleaning-alert-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: .05rem;
+}
+
+.cleaning-alert-text {
+  flex: 1;
+}
+
+.cleaning-alert-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--putzen);
+  margin-bottom: .2rem;
+}
+
+.cleaning-alert-list {
+  font-size: .78rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}

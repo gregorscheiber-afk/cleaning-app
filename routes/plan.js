@@ -1,5 +1,6 @@
 const express = require('express');
 const { pool } = require('../db');
+const { getUncleanBeforeCheckin } = require('../services/cleaningAlert');
 const router = express.Router();
 
 // GET /api/plan?from=YYYY-MM-DD&days=45&house_id=X&plan=wiwa|mainstreet
@@ -55,6 +56,14 @@ router.get('/plan', async (req, res, next) => {
     }));
 
     res.json({ from, to, days, plan, apartments: result, houses: allHouses });
+  } catch(e) { next(e); }
+});
+
+// GET /api/cleaning-alert – Apartments mit heutiger Anreise die noch nicht sauber sind
+router.get('/cleaning-alert', async (_req, res, next) => {
+  try {
+    const rows = await getUncleanBeforeCheckin();
+    res.json(rows);
   } catch(e) { next(e); }
 });
 
