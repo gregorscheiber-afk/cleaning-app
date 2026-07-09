@@ -497,16 +497,16 @@ async function loadHouses() {
   allHouses = (await (await fetch('/api/houses')).json());
   document.getElementById('houses-tbody').innerHTML = allHouses.map(h => `
     <tr>
-      <td><div class="apt-name-cell">${esc(h.name)}</div></td>
-      <td style="font-size:.82rem">${h.total||0}</td>
-      <td><button class="btn-sync" data-del-house="${h.id}">${t('btnDelete')}</button></td>
+      <td><div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(h.name)}</div></td>
+      <td style="font-size:.85rem;color:var(--ink-soft)">${h.total||0}</td>
+      <td><button class="btn-edit" data-edit-house="${h.id}">${t('editApt')}</button></td>
     </tr>`).join('')
-    || `<tr><td colspan="4" style="color:var(--ink-muted);padding:1.1rem">${t('noHousesAdmin')}</td></tr>`;
+    || `<tr><td colspan="3" style="color:var(--ink-muted);padding:1.1rem">${t('noHousesAdmin')}</td></tr>`;
 
-  document.querySelectorAll('[data-del-house]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/houses/${btn.dataset.delHouse}`, { method: 'DELETE' });
-      showToast(t('toastDeleted')); loadHouses(); loadApartments();
+  document.querySelectorAll('[data-edit-house]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const h = allHouses.find(h => String(h.id) === btn.dataset.editHouse);
+      if (h) openHouseEditModal(h);
     });
   });
 
@@ -535,100 +535,24 @@ async function loadApartments() {
   const tbody = document.getElementById('apt-tbody');
 
   if (!apts.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
     return;
   }
 
   tbody.innerHTML = apts.map(apt => `
     <tr>
-      <td colspan="5" style="padding:0">
-        <table style="width:100%;border-collapse:collapse">
-          <tr>
-            <td style="padding:.75rem 1.1rem;width:28%">
-              <div style="font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:-.01em">${esc(apt.name)}</div>
-              <div style="font-size:.72rem;color:var(--ink-soft);margin-top:.2rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
-            </td>
-            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
-            <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
-            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
-            <td style="padding:.75rem 1.1rem .75rem .5rem;white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
-              <button class="btn-edit"  data-edit="${apt.id}">${t('editApt')}</button>
-              <button class="btn-sync"  data-del="${apt.id}"  style="color:var(--putzen)">${t('btnDelete')}</button>
-            </td>
-          </tr>
-          <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
-          <tr>
-            <td colspan="5" style="padding:0">
-              <div class="admin-bookings-panel">
-                <div class="admin-bookings-title">📅 ${t('upcomingBookings')}</div>
-                ${renderAdminBookings(apt.upcoming_bookings)}
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
+      <td><div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div></td>
+      <td style="font-size:.85rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
+      <td><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
+      <td style="font-size:.82rem;color:var(--ink-soft)">${fmtDateTime(apt.last_checkout)}</td>
+      <td style="font-size:.82rem;color:var(--ink-soft)">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</td>
+      <td><button class="btn-edit" data-edit="${apt.id}">${t('editApt')}</button></td>
     </tr>`).join('');
 
-  // Handlers
   tbody.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', () => {
       const apt = apts.find(a => a.id == btn.dataset.edit);
       if (apt) openEditModal(apt);
-    });
-  });
-  tbody.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/apartments/${btn.dataset.del}`, { method: 'DELETE' });
-      showToast(t('toastDeleted')); loadApartments(); loadHouses();
-    });
-  });
-  apts.forEach(apt => attachNoteHandlers(apt));
-
-  // Manuelle Buchung löschen
-  document.querySelectorAll('[data-del-booking]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/bookings/${btn.dataset.delBooking}`, { method: 'DELETE' });
-      showToast(t('toastDeleted'));
-      loadApartments();
-    });
-  });
-
-  // Manuelle Buchung hinzufügen
-  document.querySelectorAll('[data-manual-apt]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const aptId = btn.dataset.manualApt;
-      const start = document.querySelector(`.manual-start[data-apt="${aptId}"]`).value;
-      const end   = document.querySelector(`.manual-end[data-apt="${aptId}"]`).value;
-      if (!start || !end) { showToast('Bitte An- und Abreise eintragen'); return; }
-      btn.disabled = true; btn.textContent = '…';
-      try {
-        const res = await fetch(`/api/apartments/${aptId}/bookings`, {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ start, end }),
-        });
-        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-        showToast(t('toastAdded'));
-        loadApartments();
-      } catch(err) { showToast(err.message); btn.disabled = false; btn.textContent = t('manualBookingAdd'); }
-    });
-  });
-
-  // Personen speichern
-  document.querySelectorAll('[data-save-booking]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.saveBooking;
-      const adults   = document.querySelector(`[data-booking="${id}"][data-field="adults"]`)?.value   || 0;
-      const children = document.querySelector(`[data-booking="${id}"][data-field="children"]`)?.value || 0;
-      const babies   = document.querySelector(`[data-booking="${id}"][data-field="babies"]`)?.value   || 0;
-      btn.disabled = true; btn.textContent = '…';
-      try {
-        await fetch(`/api/bookings/${id}/persons`, {
-          method: 'PUT', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ adults: Number(adults), children: Number(children), babies: Number(babies) }),
-        });
-        showToast(t('toastSaved'));
-        loadApartments();
-      } catch { showToast(t('toastError')); btn.disabled = false; btn.textContent = '✓'; }
     });
   });
 }
@@ -671,7 +595,7 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
   e.preventDefault();
   document.getElementById('apt-form-error').textContent = '';
   const name     = document.getElementById('apt-name').value.trim();
-  const ical_url = document.getElementById('apt-ical').value.trim();
+  
   const pms_code = document.getElementById('apt-pms').value.trim();
   const house_id = document.getElementById('apt-house').value;
   try {
