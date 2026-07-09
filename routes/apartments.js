@@ -1,6 +1,5 @@
 const express = require('express');
 const { pool } = require('../db');
-const { syncApartment } = require('../services/icalSync');
 const router = express.Router();
 
 async function enrichApartments(apts) {
@@ -56,27 +55,26 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { name, ical_url, house_id, pms_code, checkout_time } = req.body || {};
+    const { name, house_id, pms_code, checkout_time } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name ist erforderlich' });
     const { rows } = await pool.query(
-      `INSERT INTO apartments (name,ical_url,house_id,pms_code,checkout_time) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [name, ical_url||null, house_id||null, pms_code||null, checkout_time||'09:30']
+      `INSERT INTO apartments (name,house_id,pms_code,checkout_time) VALUES ($1,$2,$3,$4) RETURNING *`,
+      [name, house_id||null, pms_code||null, checkout_time||'09:30']
     );
     const [enriched] = await enrichApartments(rows);
-    if (rows[0].ical_url) syncApartment(rows[0]).catch(console.error);
     res.status(201).json(enriched);
   } catch(e) { next(e); }
 });
 
 router.put('/:id', async (req, res, next) => {
   try {
-    const { name, ical_url, house_id, pms_code, checkout_time } = req.body || {};
+    const { name, house_id, pms_code, checkout_time } = req.body || {};
     const { rows: existing } = await pool.query(`SELECT * FROM apartments WHERE id=$1`, [req.params.id]);
     if (!existing.length) return res.status(404).json({ error: 'Apartment nicht gefunden' });
     const a = existing[0];
     const { rows } = await pool.query(
-      `UPDATE apartments SET name=$1,ical_url=$2,house_id=$3,pms_code=$4,checkout_time=$5 WHERE id=$6 RETURNING *`,
-      [name??a.name, ical_url??a.ical_url, house_id??a.house_id, pms_code??a.pms_code, (checkout_time??a.checkout_time)||'09:30', req.params.id]
+      `UPDATE apartments SET name=$1,house_id=$2,pms_code=$3,checkout_time=$4 WHERE id=$5 RETURNING *`,
+      [name??a.name, house_id??a.house_id, pms_code??a.pms_code, (checkout_time??a.checkout_time)||'09:30', req.params.id]
     );
     const [enriched] = await enrichApartments(rows);
     res.json(enriched);
@@ -87,17 +85,6 @@ router.delete('/:id', async (req, res, next) => {
   try {
     await pool.query(`DELETE FROM apartments WHERE id=$1`, [req.params.id]);
     res.status(204).end();
-  } catch(e) { next(e); }
-});
-
-router.post('/:id/sync', async (req, res, next) => {
-  try {
-    const { rows } = await pool.query(`SELECT * FROM apartments WHERE id=$1`, [req.params.id]);
-    if (!rows.length) return res.status(404).json({ error: 'Apartment nicht gefunden' });
-    await syncApartment(rows[0]);
-    const { rows: updated } = await pool.query(`SELECT * FROM apartments WHERE id=$1`, [req.params.id]);
-    const [enriched] = await enrichApartments(updated);
-    res.json(enriched);
   } catch(e) { next(e); }
 });
 

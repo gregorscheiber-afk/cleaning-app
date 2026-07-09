@@ -3,21 +3,19 @@ const express = require('express');
 const path    = require('path');
 const cron    = require('node-cron');
 
-// Sofort prüfen ob DATABASE_URL gesetzt ist
 if (!process.env.DATABASE_URL) {
   console.error('FEHLER: DATABASE_URL ist nicht gesetzt!');
   process.exit(1);
 }
-console.log('DATABASE_URL gefunden, verbinde mit Datenbank...');
 
-const { initDb }       = require('./db');
-const housesRouter     = require('./routes/houses');
-const apartmentsRouter = require('./routes/apartments');
-const cleaningsRouter  = require('./routes/cleanings');
-const notesRouter      = require('./routes/notes');
-const importRouter     = require('./routes/import');
-const bookingsRouter   = require('./routes/bookings');
-const { syncAll }      = require('./services/icalSync');
+const { initDb }        = require('./db');
+const { recomputeAll }  = require('./services/icalSync');
+const housesRouter      = require('./routes/houses');
+const apartmentsRouter  = require('./routes/apartments');
+const cleaningsRouter   = require('./routes/cleanings');
+const notesRouter       = require('./routes/notes');
+const importRouter      = require('./routes/import');
+const bookingsRouter    = require('./routes/bookings');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -32,18 +30,29 @@ app.use('/api',            notesRouter);
 app.use('/api',            importRouter);
 app.use('/api',            bookingsRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/test-db', async (_req, res) => {
+  try {
+    const { pool } = require('./db');
+    const { rows } = await pool.query('SELECT COUNT(*) as houses FROM houses');
+    res.json({ db: 'ok', houses: rows[0].houses });
+  } catch(e) {
+    res.status(500).json({ db: 'error', error: e.message });
+  }
+});
 
 app.use((err, _req, res, _next) => {
-  console.error('Route-Fehler:', err.message);
+  console.error('Fehler:', err.message);
   res.status(500).json({ error: err.message || 'Interner Serverfehler' });
 });
 
 initDb()
   .then(() => {
     app.listen(PORT, () => console.log(`Server läuft auf Port ${PORT}`));
-    syncAll().catch(err => console.error('Sync fehlgeschlagen:', err.message));
-    cron.schedule(process.env.SYNC_CRON || '*/15 * * * *', () => {
-      syncAll().catch(err => console.error('Sync fehlgeschlagen:', err.message));
+    // Status aller Apartments beim Start neu berechnen
+    recomputeAll().catch(err => console.error('recomputeAll fehlgeschlagen:', err.message));
+    // Stündlich Status neu berechnen (für automatischen Wechsel zur Reinigungszeit)
+    cron.schedule('*/15 * * * *', () => {
+      recomputeAll().catch(err => console.error('recomputeAll fehlgeschlagen:', err.message));
     });
   })
   .catch(err => {

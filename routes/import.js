@@ -70,14 +70,22 @@ router.post('/import-bookings', async (req, res, next) => {
         continue;
       }
 
+      // Beim ersten Excel-Eintrag für dieses Apartment: alle iCal-Buchungen löschen
+      if (!affectedApts.has(apt.id)) {
+        await pool.query(
+          `DELETE FROM bookings WHERE apartment_id=$1 AND (source='ical' OR source IS NULL)`,
+          [apt.id]
+        );
+      }
+
       const { rows: existing } = await pool.query(
-        `SELECT id FROM bookings WHERE apartment_id=$1 AND LEFT(start,10)=$2`,
+        `SELECT id FROM bookings WHERE apartment_id=$1 AND LEFT(start,10)=$2 AND source='excel'`,
         [apt.id, start]
       );
 
       if (existing.length) {
         await pool.query(
-          `UPDATE bookings SET "end"=$1, guest_name=$2, persons=$3, source='excel', synced_at=NOW()
+          `UPDATE bookings SET "end"=$1, guest_name=$2, persons=$3, synced_at=NOW()
            WHERE id=$4`,
           [end, guestName, persons, existing[0].id]
         );

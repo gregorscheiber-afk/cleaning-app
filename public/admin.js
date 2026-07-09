@@ -37,13 +37,11 @@ function applyLabels() {
   document.getElementById('th-checkout').textContent         = t('thCheckout');
   document.getElementById('house-name').placeholder          = t('houseName');
   document.getElementById('apt-name').placeholder            = t('aptNamePlaceholder');
-  document.getElementById('apt-ical').placeholder            = t('icalPlaceholder');
   document.getElementById('apt-pms').placeholder             = t('pmsCodePlaceholder');
   document.getElementById('btn-add-house').textContent       = t('btnAdd');
   document.getElementById('btn-add-apt').textContent         = t('btnAdd');
   // Modal
   document.getElementById('modal-lbl-name').textContent  = t('thName');
-  document.getElementById('modal-lbl-ical').textContent  = 'iCal-URL';
   document.getElementById('modal-lbl-pms').textContent   = t('pmsCode');
   document.getElementById('modal-lbl-house').textContent = t('thHouse');
   document.getElementById('modal-cancel').textContent    = t('btnCancel');
@@ -184,11 +182,9 @@ function openEditModal(apt) {
   editingAptId = apt.id;
   document.getElementById('modal-title').textContent    = t('editTitle');
   document.getElementById('modal-apt-name').value       = apt.name || '';
-  document.getElementById('modal-apt-ical').value       = apt.ical_url || '';
   document.getElementById('modal-apt-pms').value        = apt.pms_code || '';
   document.getElementById('modal-apt-pms').placeholder  = t('pmsCodePlaceholder');
   document.getElementById('modal-apt-name').placeholder = t('aptNamePlaceholder');
-  document.getElementById('modal-apt-ical').placeholder = t('icalPlaceholder');
   document.getElementById('modal-apt-time').value        = apt.checkout_time || '09:30';
   document.getElementById('modal-error').textContent    = '';
 
@@ -217,7 +213,6 @@ document.getElementById('edit-modal').addEventListener('click', e => {
 document.getElementById('modal-save').addEventListener('click', async () => {
   if (!editingAptId) return;
   const name     = document.getElementById('modal-apt-name').value.trim();
-  const ical_url = document.getElementById('modal-apt-ical').value.trim();
   const pms_code      = document.getElementById('modal-apt-pms').value.trim();
   const checkout_time = document.getElementById('modal-apt-time').value || '09:30';
   const house_id      = document.getElementById('modal-apt-house').value;
@@ -225,7 +220,7 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   try {
     const res = await fetch(`/api/apartments/${editingAptId}`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, ical_url: ical_url || null, pms_code: pms_code || null, checkout_time, house_id: house_id || null }),
+      body: JSON.stringify({ name, pms_code: pms_code || null, checkout_time, house_id: house_id || null }),
     });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
     showToast(t('toastSaved'));
@@ -496,14 +491,12 @@ async function loadApartments() {
               <div class="apt-name-cell">${esc(apt.name)}</div>
               ${apt.pms_code ? `<div style="font-size:.7rem;color:var(--accent);margin-top:.15rem">PMS: ${esc(apt.pms_code)}</div>` : ''}
               <div style="font-size:.7rem;color:var(--ink-soft);margin-top:.1rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
-              ${apt.last_sync_error ? `<div class="sync-error">⚠ ${esc(apt.last_sync_error)}</div>` : ''}
             </td>
             <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
             <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
             <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
             <td style="padding:.75rem 1.1rem .75rem .5rem;white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
               <button class="btn-edit"  data-edit="${apt.id}">${t('editApt')}</button>
-              <button class="btn-sync"  data-sync="${apt.id}">${t('btnSync')}</button>
               <button class="btn-sync"  data-del="${apt.id}"  style="color:var(--putzen)">${t('btnDelete')}</button>
             </td>
           </tr>
@@ -525,13 +518,6 @@ async function loadApartments() {
     btn.addEventListener('click', () => {
       const apt = apts.find(a => a.id == btn.dataset.edit);
       if (apt) openEditModal(apt);
-    });
-  });
-  tbody.querySelectorAll('[data-sync]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.textContent = '…';
-      await fetch(`/api/apartments/${btn.dataset.sync}/sync`, { method: 'POST' });
-      loadApartments();
     });
   });
   tbody.querySelectorAll('[data-del]').forEach(btn => {
@@ -637,7 +623,11 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ name, ical_url:ical_url||null, pms_code:pms_code||null, house_id:house_id||null }),
     });
-    if (!res.ok) { const d=await res.json(); throw new Error(d.error); }
+    if (!res.ok) {
+      let msg = `Fehler ${res.status}`;
+      try { const d = await res.json(); msg = d.error || msg; } catch {}
+      throw new Error(msg);
+    }
     e.target.reset(); showToast(t('toastAdded')); loadApartments(); loadHouses();
   } catch(err) { document.getElementById('apt-form-error').textContent = err.message; }
 });
