@@ -31,8 +31,7 @@
 </header>
 
 <main>
-
-  <!-- 1. Stats -->
+  <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card c-putzen"><div class="stat-number" id="stat-putzen">–</div><div class="stat-label" id="lbl-stat-putzen"></div></div>
     <div class="stat-card c-sauber"><div class="stat-number" id="stat-sauber">–</div><div class="stat-label" id="lbl-stat-sauber"></div></div>
@@ -43,13 +42,13 @@
     <path d="M0 32 L60 8 L110 20 L180 2 L250 18 L320 5 L390 19 L460 7 L530 22 L600 4 L680 32 Z" fill="#c8963a"/>
   </svg>
 
-  <!-- 2. Letzte Bestätigungen -->
+  <!-- Benachrichtigungen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-notif"></span></div>
     <div class="panel-body"><div id="notifications" class="notif-list"></div></div>
   </div>
 
-  <!-- 3. Belegungsplan importieren (Excel) -->
+  <!-- Belegungsplan importieren -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-import"></span></div>
     <div class="panel-body" style="padding:1.1rem">
@@ -65,7 +64,7 @@
     </div>
   </div>
 
-  <!-- 4. Apartments -->
+  <!-- Apartments -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title" id="lbl-panel-apts"></span>
@@ -73,13 +72,13 @@
     </div>
     <div class="panel-body">
       <table class="apt-table">
-        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th id="th-time-label"></th><th></th></tr></thead>
+        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th></th></tr></thead>
         <tbody id="apt-tbody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- 5. Häuser -->
+  <!-- Häuser -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
     <div class="panel-body">
@@ -87,11 +86,10 @@
         <thead><tr><th id="th-name-h"></th><th>Apartments</th><th></th></tr></thead>
         <tbody id="houses-tbody"></tbody>
       </table>
-      <!-- Haus-Bearbeiten Modal (inline) -->
     </div>
   </div>
 
-  <!-- 6. Häuser & Apartments importieren -->
+  <!-- Häuser & Apartments importieren -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
     <div class="panel-body" style="padding:1.1rem">
@@ -108,7 +106,7 @@
     </div>
   </div>
 
-  <!-- 7. Haus hinzufügen -->
+  <!-- Haus hinzufügen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-add-house"></span></div>
     <div class="panel-body">
@@ -120,7 +118,7 @@
     </div>
   </div>
 
-  <!-- 8. Apartment hinzufügen -->
+  <!-- Apartment hinzufügen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-add-apt"></span></div>
     <div class="panel-body">
@@ -133,7 +131,6 @@
       </form>
     </div>
   </div>
-
 </main>
 
 <!-- Edit Modal -->
@@ -161,27 +158,7 @@
         <button class="btn-secondary" id="modal-cancel"></button>
         <button class="btn-primary" id="modal-save"></button>
       </div>
-      <button id="modal-delete-apt" style="width:100%;margin-top:.5rem;background:none;border:1px solid var(--putzen);color:var(--putzen);border-radius:8px;padding:.65rem;font-size:.82rem;font-weight:700;cursor:pointer">Apartment löschen</button>
       <div class="form-error" id="modal-error"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Haus-Edit-Modal -->
-<div id="house-edit-modal" class="modal-overlay" style="display:none">
-  <div class="modal-box">
-    <div class="modal-title" id="house-modal-title">Haus bearbeiten</div>
-    <div class="modal-form">
-      <div class="modal-field">
-        <div class="modal-field-label">Name</div>
-        <input id="house-modal-name" type="text"/>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-secondary" id="house-modal-cancel">Abbrechen</button>
-        <button class="btn-primary" id="house-modal-save">Speichern</button>
-      </div>
-      <button id="house-modal-delete" style="width:100%;margin-top:.5rem;background:none;border:1px solid var(--putzen);color:var(--putzen);border-radius:8px;padding:.65rem;font-size:.82rem;font-weight:700;cursor:pointer;letter-spacing:.04em">Haus löschen</button>
-      <div class="form-error" id="house-modal-error"></div>
     </div>
   </div>
 </div>

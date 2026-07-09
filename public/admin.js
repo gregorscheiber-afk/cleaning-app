@@ -3,6 +3,7 @@ let lastTs = null;
 let allHouses = [];
 let editingAptId = null;
 let importRows = [];
+let structureRows = [];
 
 function showToast(msg) {
   toastEl.textContent = msg;
@@ -20,7 +21,7 @@ function applyLabels() {
   document.getElementById('lbl-panel-houses').textContent    = t('panelHouses');
   document.getElementById('lbl-panel-apts').textContent      = t('panelApts');
   document.getElementById('lbl-panel-import').textContent    = t('panelImport');
-  document.getElementById('lbl-import-hint').textContent          = t('importHintNew') || t('importHint');
+  document.getElementById('lbl-import-hint').textContent     = t('importHintNew') || t('importHint');
   document.getElementById('lbl-panel-import-structure').textContent = t('panelImportStructure');
   document.getElementById('lbl-import-structure-hint').textContent  = t('importStructureHint');
   document.getElementById('lbl-structure-btn').textContent          = t('importBtn');
@@ -35,19 +36,17 @@ function applyLabels() {
   document.getElementById('th-house').textContent            = t('thHouse');
   document.getElementById('th-status').textContent           = t('thStatus');
   document.getElementById('th-checkout').textContent         = t('thCheckout');
-  if (document.getElementById('th-time-label')) document.getElementById('th-time-label').textContent = t('cleanFrom');
   document.getElementById('house-name').placeholder          = t('houseName');
   document.getElementById('apt-name').placeholder            = t('aptNamePlaceholder');
   document.getElementById('apt-pms').placeholder             = t('pmsCodePlaceholder');
   document.getElementById('btn-add-house').textContent       = t('btnAdd');
   document.getElementById('btn-add-apt').textContent         = t('btnAdd');
-  // Modal
-  document.getElementById('modal-lbl-name').textContent  = t('thName');
-  document.getElementById('modal-lbl-pms').textContent   = t('pmsCode');
-  document.getElementById('modal-lbl-house').textContent = t('thHouse');
-  document.getElementById('modal-cancel').textContent    = t('btnCancel');
-  document.getElementById('modal-lbl-time').textContent  = t('checkoutTime');
-  document.getElementById('modal-save').textContent      = t('btnSave');
+  document.getElementById('modal-lbl-name').textContent      = t('thName');
+  document.getElementById('modal-lbl-pms').textContent       = t('pmsCode');
+  document.getElementById('modal-lbl-house').textContent     = t('thHouse');
+  document.getElementById('modal-cancel').textContent        = t('btnCancel');
+  document.getElementById('modal-lbl-time').textContent      = t('checkoutTime');
+  document.getElementById('modal-save').textContent          = t('btnSave');
   document.documentElement.lang = localStorage.getItem('ma_lang') || 'de';
 }
 
@@ -100,9 +99,9 @@ function renderNotesPanel(apt) {
 // ── Buchungen-Panel ───────────────────────────────────────
 function parsePersons(persons) {
   if (!persons) return { adults: 0, children: 0, babies: 0 };
-  const a = (persons.match(/(\d+)\s*Erw/i)    || [0,0])[1];
-  const k = (persons.match(/(\d+)\s*Kind/i)   || [0,0])[1];
-  const b = (persons.match(/(\d+)\s*Baby/i)   || [0,0])[1];
+  const a = (persons.match(/(\d+)\s*Erw/i)  || [0,0])[1];
+  const k = (persons.match(/(\d+)\s*Kind/i) || [0,0])[1];
+  const b = (persons.match(/(\d+)\s*Baby/i) || [0,0])[1];
   return { adults: Number(a), children: Number(k), babies: Number(b) };
 }
 
@@ -117,7 +116,7 @@ function renderAdminBookings(bookings) {
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem;flex-wrap:wrap">
         ${isLM ? `<span class="last-minute-badge">${t('lastMinute')}</span>` : ''}
         ${isManual ? `<span class="manual-badge">${t('manualBadge')}</span>` : ''}
-        ${isManual ? `<button class="btn-del-booking" data-del-booking="${b.id}" title="Löschen">✕</button>` : ''}
+        ${isManual ? `<button class="btn-del-booking" data-del-booking="${b.id}">✕</button>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
         <div class="admin-booking-in">
@@ -129,8 +128,8 @@ function renderAdminBookings(bookings) {
           <span class="admin-booking-label">${t('checkout2')}</span>
           <span class="admin-booking-date">${fmtDate(b.end)}</span>
         </div>
-        <span class="admin-booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
         ${b.guest_name ? `<span style="font-size:.75rem;color:var(--ink-soft)">👤 ${esc(b.guest_name)}</span>` : ''}
+        <span class="admin-booking-nights">${t('night', nightsBetween(b.start, b.end))}</span>
       </div>
       <div class="persons-editor">
         <span class="persons-label">👥 ${t('personsEdit')}:</span>
@@ -186,14 +185,11 @@ function openEditModal(apt) {
   document.getElementById('modal-apt-pms').value        = apt.pms_code || '';
   document.getElementById('modal-apt-pms').placeholder  = t('pmsCodePlaceholder');
   document.getElementById('modal-apt-name').placeholder = t('aptNamePlaceholder');
-  document.getElementById('modal-apt-time').value        = apt.checkout_time || '09:30';
+  document.getElementById('modal-apt-time').value       = apt.checkout_time || '09:30';
   document.getElementById('modal-error').textContent    = '';
-
-  // Haus-Select befüllen
   const sel = document.getElementById('modal-apt-house');
   sel.innerHTML = `<option value="">${t('houseSelect')}</option>` +
     allHouses.map(h => `<option value="${h.id}" ${h.id == apt.house_id ? 'selected' : ''}>${esc(h.name)}</option>`).join('');
-
   const modal = document.getElementById('edit-modal');
   modal.style.display = 'flex';
   requestAnimationFrame(() => modal.classList.remove('closing'));
@@ -207,23 +203,13 @@ function closeEditModal() {
 }
 
 document.getElementById('modal-cancel').addEventListener('click', closeEditModal);
-
-// Apartment löschen aus Modal
-document.getElementById('modal-delete-apt').addEventListener('click', async () => {
-  if (!editingAptId) return;
-  if (!confirm('Apartment wirklich löschen?')) return;
-  await fetch(`/api/apartments/${editingAptId}`, { method: 'DELETE' });
-  showToast(t('toastDeleted'));
-  closeEditModal();
-  loadApartments(); loadHouses();
-});
 document.getElementById('edit-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('edit-modal')) closeEditModal();
 });
 
 document.getElementById('modal-save').addEventListener('click', async () => {
   if (!editingAptId) return;
-  const name     = document.getElementById('modal-apt-name').value.trim();
+  const name          = document.getElementById('modal-apt-name').value.trim();
   const pms_code      = document.getElementById('modal-apt-pms').value.trim();
   const checkout_time = document.getElementById('modal-apt-time').value || '09:30';
   const house_id      = document.getElementById('modal-apt-house').value;
@@ -231,7 +217,7 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   try {
     const res = await fetch(`/api/apartments/${editingAptId}`, {
       method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, pms_code: pms_code || null, checkout_time, house_id: house_id || null }),
+      body: JSON.stringify({ name, pms_code: pms_code||null, checkout_time, house_id: house_id||null }),
     });
     if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
     showToast(t('toastSaved'));
@@ -248,69 +234,52 @@ fileInput.addEventListener('change', () => {
   document.getElementById('import-filename').textContent = file.name;
   document.getElementById('import-result').innerHTML = '';
   importRows = [];
-
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb    = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const ws    = wb.Sheets[wb.SheetNames[0]];
-      const data  = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-
-      // Kopfzeile suchen (Zeile mit "Zimmer" in Spalte 1)
+      const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
       let headerRow = -1;
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         if (row && String(row[1] || '').trim().toLowerCase() === 'zimmer') { headerRow = i; break; }
       }
       if (headerRow === -1) {
-        document.getElementById('import-preview').innerHTML =
-          `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
+        document.getElementById('import-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
         return;
       }
-
       importRows = [];
       for (let i = headerRow + 1; i < data.length; i++) {
         const row = data[i];
         if (!row || !row[1]) continue;
-        const zimmer   = String(row[1] || '').trim();
-        const gast     = String(row[2] || '').trim();
-        const personen = String(row[3] || '').trim();
-        const anreise  = String(row[4] || '').trim();
-        const abreise  = String(row[5] || '').trim();
-        if (zimmer && anreise && abreise) {
-          importRows.push({ zimmer, gast, personen, anreise, abreise });
-        }
+        importRows.push({
+          zimmer:   String(row[1] || '').trim(),
+          gast:     String(row[2] || '').trim(),
+          personen: String(row[3] || '').trim(),
+          anreise:  String(row[4] || '').trim(),
+          abreise:  String(row[5] || '').trim(),
+        });
       }
-
       if (!importRows.length) {
-        document.getElementById('import-preview').innerHTML =
-          `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
+        document.getElementById('import-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
         document.getElementById('btn-import-start').style.display = 'none';
         return;
       }
-
       const cols = t('importCols');
       const previewRows = importRows.slice(0, 5).map(r => `
-        <tr>
-          <td>${esc(r.zimmer)}</td>
-          <td>${esc(r.gast)}</td>
-          <td style="color:var(--accent);font-weight:600">${esc(r.personen)}</td>
-          <td>${esc(r.anreise)}</td>
-          <td>${esc(r.abreise)}</td>
-        </tr>`).join('');
-
+        <tr><td>${esc(r.zimmer)}</td><td>${esc(r.gast)}</td>
+        <td style="color:var(--accent);font-weight:600">${esc(r.personen)}</td>
+        <td>${esc(r.anreise)}</td><td>${esc(r.abreise)}</td></tr>`).join('');
       document.getElementById('import-preview').innerHTML = `
-        <div class="section-label" style="margin-bottom:.5rem">${t('importPreview')} (${importRows.length} ${t('thName') === 'Name' ? 'rows' : 'Zeilen'})</div>
-        <div class="import-preview">
-          <table>
-            <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
-            <tbody>${previewRows}</tbody>
-          </table>
-        </div>`;
+        <div class="section-label" style="margin-bottom:.5rem">${t('importPreview')} (${importRows.length})</div>
+        <div class="import-preview"><table>
+          <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${previewRows}</tbody>
+        </table></div>`;
       document.getElementById('btn-import-start').style.display = 'block';
     } catch(err) {
-      document.getElementById('import-preview').innerHTML =
-        `<div style="color:var(--putzen);font-size:.82rem">Fehler: ${err.message}</div>`;
+      document.getElementById('import-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">Fehler: ${err.message}</div>`;
     }
   };
   reader.readAsArrayBuffer(file);
@@ -328,71 +297,22 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
     const data = await res.json();
     const resultEl = document.getElementById('import-result');
     const msg = t('importResult', data.created, data.updated, data.skipped);
-    resultEl.className = `import-result ${data.unmatched + data.noBooking > 0 ? 'partial' : 'success'}`;
+    resultEl.className = `import-result ${data.skipped > 0 ? 'partial' : 'success'}`;
     resultEl.textContent = msg;
     if (data.created + data.updated > 0) { showToast(`${data.created + data.updated} ${t('importPersons')} importiert ✓`); loadApartments(); loadHouses(); }
   } catch(err) {
-    document.getElementById('import-result').innerHTML =
-      `<div style="color:var(--putzen);font-size:.82rem">${err.message}</div>`;
+    document.getElementById('import-result').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${err.message}</div>`;
   } finally { btn.disabled = false; btn.textContent = t('importStart'); }
 });
 
-// ── Haus-Edit-Modal ──────────────────────────────────────
-let editingHouseId = null;
-
-function openHouseEditModal(house) {
-  editingHouseId = house.id;
-  document.getElementById('house-modal-name').value = house.name || '';
-  document.getElementById('house-modal-error').textContent = '';
-  const modal = document.getElementById('house-edit-modal');
-  modal.style.display = 'flex';
-}
-
-function closeHouseModal() {
-  document.getElementById('house-edit-modal').style.display = 'none';
-  editingHouseId = null;
-}
-
-document.getElementById('house-modal-cancel').addEventListener('click', closeHouseModal);
-document.getElementById('house-edit-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('house-edit-modal')) closeHouseModal();
-});
-
-document.getElementById('house-modal-save').addEventListener('click', async () => {
-  if (!editingHouseId) return;
-  const name = document.getElementById('house-modal-name').value.trim();
-  if (!name) { document.getElementById('house-modal-error').textContent = 'Name erforderlich'; return; }
-  try {
-    const res = await fetch(`/api/houses/${editingHouseId}`, {
-      method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) throw new Error((await res.json()).error);
-    showToast(t('toastSaved'));
-    closeHouseModal();
-    loadHouses(); loadApartments();
-  } catch(err) { document.getElementById('house-modal-error').textContent = err.message; }
-});
-
-document.getElementById('house-modal-delete').addEventListener('click', async () => {
-  if (!editingHouseId) return;
-  if (!confirm('Haus wirklich löschen? Alle zugehörigen Apartments werden getrennt.')) return;
-  await fetch(`/api/houses/${editingHouseId}`, { method: 'DELETE' });
-  showToast(t('toastDeleted'));
-  closeHouseModal();
-  loadHouses(); loadApartments();
-});
-
 // ── Struktur-Import ──────────────────────────────────────
-let structureRows = [];
-
 document.getElementById('btn-download-template').addEventListener('click', () => {
   const cols = t('importStructureCols');
   const ws = XLSX.utils.aoa_to_sheet([
     cols,
-    ['Jordans Lodge', 'Alpenrose', 'https://ical.url/...', 'LODG1'],
-    ['Jordans Lodge', 'Enzian',    '',                      'LODG2'],
-    ['MYALPS Mühlhof','Studio',   '',                      'Studi'],
+    ['Jordans Lodge', 'Alpenrose', '', 'LODG1'],
+    ['Jordans Lodge', 'Enzian',    '', 'LODG2'],
+    ['MYALPS Mühlhof','Studio',   '', 'Studi'],
   ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Struktur');
@@ -405,64 +325,41 @@ document.getElementById('structure-file-input').addEventListener('change', () =>
   document.getElementById('structure-filename').textContent = file.name;
   document.getElementById('structure-result').innerHTML = '';
   structureRows = [];
-
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const wb   = XLSX.read(e.target.result, { type: 'array' });
       const ws   = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-
-      // Kopfzeile suchen
-      let headerRow = -1;
+      let headerRow = 0;
       for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        const first = String(row?.[0] || '').toLowerCase();
-        if (first === 'haus' || first === 'house' || first === 'kuća' || first === 'ev') {
-          headerRow = i; break;
-        }
+        const first = String(data[i]?.[0] || '').toLowerCase();
+        if (first === 'haus' || first === 'house') { headerRow = i; break; }
       }
-      if (headerRow === -1) { headerRow = 0; } // erste Zeile als Header nehmen
-
       structureRows = [];
       for (let i = headerRow + 1; i < data.length; i++) {
         const row = data[i];
         if (!row || !row[0]) continue;
-        structureRows.push({
-          haus:      String(row[0] || '').trim(),
-          apartment: String(row[1] || '').trim(),
-          ical_url:  String(row[2] || '').trim(),
-          pms_code:  String(row[3] || '').trim(),
-        });
+        structureRows.push({ haus: String(row[0]||'').trim(), apartment: String(row[1]||'').trim(), ical_url: String(row[2]||'').trim(), pms_code: String(row[3]||'').trim() });
       }
-
       if (!structureRows.length) {
-        document.getElementById('structure-preview').innerHTML =
-          `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
+        document.getElementById('structure-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
         return;
       }
-
       const cols = t('importStructureCols');
       const previewRows = structureRows.slice(0,6).map(r => `
-        <tr>
-          <td>${esc(r.haus)}</td>
-          <td>${esc(r.apartment)}</td>
-          <td style="color:var(--ink-soft);font-size:.75rem">${r.ical_url ? '✓' : '–'}</td>
-          <td style="color:var(--accent)">${esc(r.pms_code) || '–'}</td>
-        </tr>`).join('');
-
+        <tr><td>${esc(r.haus)}</td><td>${esc(r.apartment)}</td>
+        <td style="color:var(--ink-soft);font-size:.75rem">${r.ical_url?'✓':'–'}</td>
+        <td style="color:var(--accent)">${esc(r.pms_code)||'–'}</td></tr>`).join('');
       document.getElementById('structure-preview').innerHTML = `
         <div class="section-label" style="margin-bottom:.5rem">${t('importPreview')} (${structureRows.length})</div>
-        <div class="import-preview">
-          <table>
-            <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
-            <tbody>${previewRows}</tbody>
-          </table>
-        </div>`;
+        <div class="import-preview"><table>
+          <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${previewRows}</tbody>
+        </table></div>`;
       document.getElementById('btn-structure-start').style.display = 'block';
     } catch(err) {
-      document.getElementById('structure-preview').innerHTML =
-        `<div style="color:var(--putzen);font-size:.82rem">Fehler: ${err.message}</div>`;
+      document.getElementById('structure-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">Fehler: ${err.message}</div>`;
     }
   };
   reader.readAsArrayBuffer(file);
@@ -482,14 +379,10 @@ document.getElementById('btn-structure-start').addEventListener('click', async (
     resultEl.className = 'import-result success';
     resultEl.textContent = t('importStructureResult', data.housesCreated, data.housesExisting, data.aptsCreated, data.aptsExisting);
     showToast(`${data.housesCreated + data.aptsCreated} neue Einträge angelegt ✓`);
-    loadHouses();
-    loadApartments();
+    loadHouses(); loadApartments();
   } catch(err) {
     document.getElementById('structure-result').textContent = err.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = t('importStructureStart');
-  }
+  } finally { btn.disabled = false; btn.textContent = t('importStructureStart'); }
 });
 
 // ── Häuser ────────────────────────────────────────────────
@@ -499,20 +392,20 @@ async function loadHouses() {
     <tr>
       <td><div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(h.name)}</div></td>
       <td style="font-size:.85rem;color:var(--ink-soft)">${h.total||0}</td>
-      <td><button class="btn-edit" data-edit-house="${h.id}">${t('editApt')}</button></td>
+      <td><button class="btn-sync" data-del-house="${h.id}">${t('btnDelete')}</button></td>
     </tr>`).join('')
     || `<tr><td colspan="3" style="color:var(--ink-muted);padding:1.1rem">${t('noHousesAdmin')}</td></tr>`;
 
-  document.querySelectorAll('[data-edit-house]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const h = allHouses.find(h => String(h.id) === btn.dataset.editHouse);
-      if (h) openHouseEditModal(h);
+  document.querySelectorAll('[data-del-house]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/houses/${btn.dataset.delHouse}`, { method: 'DELETE' });
+      showToast(t('toastDeleted')); loadHouses(); loadApartments();
     });
   });
 
-  const houseOpts = `<option value="">${t('houseSelect')}</option>` +
+  document.getElementById('apt-house').innerHTML =
+    `<option value="">${t('houseSelect')}</option>` +
     allHouses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
-  document.getElementById('apt-house').innerHTML = houseOpts;
   document.getElementById('filter-house').innerHTML =
     `<option value="">${t('allHouses')}</option>` +
     allHouses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
@@ -535,24 +428,108 @@ async function loadApartments() {
   const tbody = document.getElementById('apt-tbody');
 
   if (!apts.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
     return;
   }
 
   tbody.innerHTML = apts.map(apt => `
     <tr>
-      <td><div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div></td>
-      <td style="font-size:.85rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
-      <td><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
-      <td style="font-size:.82rem;color:var(--ink-soft)">${fmtDateTime(apt.last_checkout)}</td>
-      <td style="font-size:.82rem;color:var(--ink-soft)">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</td>
-      <td><button class="btn-edit" data-edit="${apt.id}">${t('editApt')}</button></td>
+      <td colspan="5" style="padding:0">
+        <table style="width:100%;border-collapse:collapse">
+          <tr>
+            <td style="padding:.75rem 1.1rem;width:28%">
+              <div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div>
+              <div style="font-size:.72rem;color:var(--ink-soft);margin-top:.2rem">⏰ ${t('cleanFrom')}: ${esc(apt.checkout_time||'09:30')} Uhr</div>
+            </td>
+            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
+            <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
+            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
+            <td style="padding:.75rem 1.1rem .75rem .5rem;white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
+              <button class="btn-edit" data-edit="${apt.id}">${t('editApt')}</button>
+              <button class="btn-sync" data-del="${apt.id}" style="color:var(--putzen)">${t('btnDelete')}</button>
+            </td>
+          </tr>
+          <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
+          <tr>
+            <td colspan="5" style="padding:0">
+              <div class="admin-bookings-panel">
+                <div class="admin-bookings-title">📅 ${t('upcomingBookings')}</div>
+                ${renderAdminBookings(apt.upcoming_bookings)}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="5" style="padding:0">
+              <div class="manual-booking-form">
+                <div style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted)">${t('manualBooking')}</div>
+                <div style="font-size:.75rem;color:var(--ink-soft)">${t('manualBookingHint')}</div>
+                <div class="manual-booking-inputs">
+                  <input type="date" class="manual-start" data-apt="${apt.id}"/>
+                  <input type="date" class="manual-end"   data-apt="${apt.id}"/>
+                </div>
+                <button class="btn-manual-add" data-manual-apt="${apt.id}">${t('manualBookingAdd')}</button>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
     </tr>`).join('');
 
   tbody.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', () => {
       const apt = apts.find(a => a.id == btn.dataset.edit);
       if (apt) openEditModal(apt);
+    });
+  });
+
+  tbody.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/apartments/${btn.dataset.del}`, { method: 'DELETE' });
+      showToast(t('toastDeleted')); loadApartments(); loadHouses();
+    });
+  });
+
+  apts.forEach(apt => attachNoteHandlers(apt));
+
+  document.querySelectorAll('[data-del-booking]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/bookings/${btn.dataset.delBooking}`, { method: 'DELETE' });
+      showToast(t('toastDeleted')); loadApartments();
+    });
+  });
+
+  document.querySelectorAll('[data-manual-apt]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const aptId = btn.dataset.manualApt;
+      const start = document.querySelector(`.manual-start[data-apt="${aptId}"]`).value;
+      const end   = document.querySelector(`.manual-end[data-apt="${aptId}"]`).value;
+      if (!start || !end) { showToast('Bitte An- und Abreise eintragen'); return; }
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const res = await fetch(`/api/apartments/${aptId}/bookings`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ start, end }),
+        });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        showToast(t('toastAdded')); loadApartments();
+      } catch(err) { showToast(err.message); btn.disabled = false; btn.textContent = t('manualBookingAdd'); }
+    });
+  });
+
+  document.querySelectorAll('[data-save-booking]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.saveBooking;
+      const adults   = document.querySelector(`[data-booking="${id}"][data-field="adults"]`)?.value   || 0;
+      const children = document.querySelector(`[data-booking="${id}"][data-field="children"]`)?.value || 0;
+      const babies   = document.querySelector(`[data-booking="${id}"][data-field="babies"]`)?.value   || 0;
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        await fetch(`/api/bookings/${id}/persons`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ adults: Number(adults), children: Number(children), babies: Number(babies) }),
+        });
+        showToast(t('toastSaved')); loadApartments();
+      } catch { showToast(t('toastError')); btn.disabled = false; btn.textContent = '✓'; }
     });
   });
 }
@@ -580,13 +557,17 @@ async function loadNotifications() {
 document.getElementById('add-house-form').addEventListener('submit', async e => {
   e.preventDefault();
   document.getElementById('house-form-error').textContent = '';
-  const name    = document.getElementById('house-name').value.trim();
+  const name = document.getElementById('house-name').value.trim();
   try {
     const res = await fetch('/api/houses', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ name }),
     });
-    if (!res.ok) { const d=await res.json(); throw new Error(d.error); }
+    if (!res.ok) {
+      let msg = `Fehler ${res.status}`;
+      try { const d = await res.json(); msg = d.error || msg; } catch {}
+      throw new Error(msg);
+    }
     e.target.reset(); showToast(t('toastAdded')); loadHouses();
   } catch(err) { document.getElementById('house-form-error').textContent = err.message; }
 });
@@ -595,13 +576,12 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
   e.preventDefault();
   document.getElementById('apt-form-error').textContent = '';
   const name     = document.getElementById('apt-name').value.trim();
-  
   const pms_code = document.getElementById('apt-pms').value.trim();
   const house_id = document.getElementById('apt-house').value;
   try {
     const res = await fetch('/api/apartments', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ name, ical_url:ical_url||null, pms_code:pms_code||null, house_id:house_id||null }),
+      body: JSON.stringify({ name, pms_code: pms_code||null, house_id: house_id||null }),
     });
     if (!res.ok) {
       let msg = `Fehler ${res.status}`;
@@ -613,10 +593,13 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
 });
 
 document.getElementById('filter-house').addEventListener('change', loadApartments);
-document.getElementById('btn-lang').addEventListener('click', () => { localStorage.removeItem('ma_lang'); location.reload(); });
+
+document.getElementById('btn-lang').addEventListener('click', () => {
+  localStorage.removeItem('ma_lang'); location.reload();
+});
 
 // Plan-Dropdown
-const planMenuBtn = document.getElementById('btn-plan-menu');
+const planMenuBtn  = document.getElementById('btn-plan-menu');
 const planDropdown = document.getElementById('plan-dropdown');
 if (planMenuBtn) {
   planMenuBtn.addEventListener('click', (e) => {
