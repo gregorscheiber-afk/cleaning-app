@@ -73,7 +73,7 @@
     </div>
     <div class="panel-body">
       <table class="apt-table">
-        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th></th></tr></thead>
+        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th id="th-time-label"></th><th></th></tr></thead>
         <tbody id="apt-tbody"></tbody>
       </table>
     </div>
@@ -87,6 +87,7 @@
         <thead><tr><th id="th-name-h"></th><th>Apartments</th><th></th></tr></thead>
         <tbody id="houses-tbody"></tbody>
       </table>
+      <!-- Haus-Bearbeiten Modal (inline) -->
     </div>
   </div>
 
@@ -161,6 +162,25 @@
         <button class="btn-primary" id="modal-save"></button>
       </div>
       <div class="form-error" id="modal-error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Haus-Edit-Modal -->
+<div id="house-edit-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title" id="house-modal-title">Haus bearbeiten</div>
+    <div class="modal-form">
+      <div class="modal-field">
+        <div class="modal-field-label">Name</div>
+        <input id="house-modal-name" type="text"/>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="house-modal-cancel">Abbrechen</button>
+        <button class="btn-primary" id="house-modal-save">Speichern</button>
+      </div>
+      <button id="house-modal-delete" style="width:100%;margin-top:.5rem;background:none;border:1px solid var(--putzen);color:var(--putzen);border-radius:8px;padding:.65rem;font-size:.82rem;font-weight:700;cursor:pointer;letter-spacing:.04em">Haus löschen</button>
+      <div class="form-error" id="house-modal-error"></div>
     </div>
   </div>
 </div>

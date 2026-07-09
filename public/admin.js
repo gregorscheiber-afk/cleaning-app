@@ -35,6 +35,7 @@ function applyLabels() {
   document.getElementById('th-house').textContent            = t('thHouse');
   document.getElementById('th-status').textContent           = t('thStatus');
   document.getElementById('th-checkout').textContent         = t('thCheckout');
+  if (document.getElementById('th-time-label')) document.getElementById('th-time-label').textContent = t('cleanFrom');
   document.getElementById('house-name').placeholder          = t('houseName');
   document.getElementById('apt-name').placeholder            = t('aptNamePlaceholder');
   document.getElementById('apt-pms').placeholder             = t('pmsCodePlaceholder');
@@ -206,6 +207,16 @@ function closeEditModal() {
 }
 
 document.getElementById('modal-cancel').addEventListener('click', closeEditModal);
+
+// Apartment löschen aus Modal
+document.getElementById('modal-delete-apt').addEventListener('click', async () => {
+  if (!editingAptId) return;
+  if (!confirm('Apartment wirklich löschen?')) return;
+  await fetch(`/api/apartments/${editingAptId}`, { method: 'DELETE' });
+  showToast(t('toastDeleted'));
+  closeEditModal();
+  loadApartments(); loadHouses();
+});
 document.getElementById('edit-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('edit-modal')) closeEditModal();
 });
@@ -324,6 +335,52 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
     document.getElementById('import-result').innerHTML =
       `<div style="color:var(--putzen);font-size:.82rem">${err.message}</div>`;
   } finally { btn.disabled = false; btn.textContent = t('importStart'); }
+});
+
+// ── Haus-Edit-Modal ──────────────────────────────────────
+let editingHouseId = null;
+
+function openHouseEditModal(house) {
+  editingHouseId = house.id;
+  document.getElementById('house-modal-name').value = house.name || '';
+  document.getElementById('house-modal-error').textContent = '';
+  const modal = document.getElementById('house-edit-modal');
+  modal.style.display = 'flex';
+}
+
+function closeHouseModal() {
+  document.getElementById('house-edit-modal').style.display = 'none';
+  editingHouseId = null;
+}
+
+document.getElementById('house-modal-cancel').addEventListener('click', closeHouseModal);
+document.getElementById('house-edit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('house-edit-modal')) closeHouseModal();
+});
+
+document.getElementById('house-modal-save').addEventListener('click', async () => {
+  if (!editingHouseId) return;
+  const name = document.getElementById('house-modal-name').value.trim();
+  if (!name) { document.getElementById('house-modal-error').textContent = 'Name erforderlich'; return; }
+  try {
+    const res = await fetch(`/api/houses/${editingHouseId}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    showToast(t('toastSaved'));
+    closeHouseModal();
+    loadHouses(); loadApartments();
+  } catch(err) { document.getElementById('house-modal-error').textContent = err.message; }
+});
+
+document.getElementById('house-modal-delete').addEventListener('click', async () => {
+  if (!editingHouseId) return;
+  if (!confirm('Haus wirklich löschen? Alle zugehörigen Apartments werden getrennt.')) return;
+  await fetch(`/api/houses/${editingHouseId}`, { method: 'DELETE' });
+  showToast(t('toastDeleted'));
+  closeHouseModal();
+  loadHouses(); loadApartments();
 });
 
 // ── Struktur-Import ──────────────────────────────────────

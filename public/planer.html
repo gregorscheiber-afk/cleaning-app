@@ -88,8 +88,6 @@ html, body { height: 100%; overflow: hidden; }
 
 /* ── Sticky header cells ── */
 .planer-table thead th {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
   white-space: nowrap;
   font-size: .65rem;
   font-weight: 700;
@@ -100,18 +98,30 @@ html, body { height: 100%; overflow: hidden; }
   padding: .3rem .1rem;
   position: sticky;
   z-index: 20;
+  /* Solid background – verhindert Durchbluten beim Scrollen */
+  background-color: #1e231e;
+  border-bottom: 1px solid var(--line);
 }
 
-.row-kw  th { top: 0;    height: 26px; background: var(--surface-3); }
-.row-day th { top: 26px; height: 24px; }
-.row-date th { top: 50px; height: 26px; border-bottom: 2px solid var(--line); }
+.row-kw  th { top: 0;    height: 26px; background-color: #222722; }
+.row-day th { top: 26px; height: 24px; background-color: #1e231e; }
+.row-date th { top: 50px; height: 26px; border-bottom: 2px solid var(--line); background-color: #1e231e; }
+
+/* ── Today/Weekend in Header ── */
+.row-kw th.is-today, .row-day th.is-today, .row-date th.is-today {
+  background-color: rgba(200,150,58,.18) !important;
+  color: var(--accent) !important;
+}
+.row-kw th.is-weekend, .row-day th.is-weekend, .row-date th.is-weekend {
+  background-color: #222722 !important;
+}
 
 /* ── Left name column ── */
 .th-name, .td-name {
   position: sticky;
   left: 0;
   z-index: 10;
-  background: var(--surface);
+  background-color: #1a1e1a;
   width: 130px;
   min-width: 130px;
   max-width: 130px;
@@ -119,15 +129,15 @@ html, body { height: 100%; overflow: hidden; }
   padding: 0 .65rem;
 }
 
-/* Corner cell */
+/* Corner cell – höchster z-index damit Header + Left-Col sich nicht überlappen */
 .planer-table thead .th-name {
-  z-index: 30;
-  background: var(--surface-3);
+  z-index: 40 !important;
+  background-color: #222722 !important;
 }
 
-/* ── Today highlight ── */
-.is-today { background: rgba(200,150,58,.08) !important; color: var(--accent) !important; }
-.is-weekend { background: rgba(255,255,255,.018) !important; }
+/* ── Today/Weekend in Body ── */
+.is-today  { background-color: rgba(200,150,58,.06) !important; }
+.is-weekend { background-color: rgba(255,255,255,.015) !important; }
 
 /* ── House separator row ── */
 .tr-house td {
@@ -192,6 +202,11 @@ html, body { height: 100%; overflow: hidden; }
 .td-day.is-today    { background: rgba(200,150,58,.06); }
 .td-day.is-weekend  { background: rgba(255,255,255,.015); }
 .td-day.is-checkout { background: rgba(217,107,60,.1); }
+
+/* ── Booking blocks dürfen nicht über Header ragen ── */
+.planer-scroll {
+  isolation: isolate;
+}
 
 /* ── Booking block ── */
 .bk {
