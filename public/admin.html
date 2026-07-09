@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 <title>MYALPS · Admin</title>
 <link rel="stylesheet" href="/style.css"/>
-<!-- SheetJS für Excel-Parsing im Browser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -24,6 +23,8 @@
 </header>
 
 <main>
+
+  <!-- 1. Stats -->
   <div class="stats-row">
     <div class="stat-card c-putzen"><div class="stat-number" id="stat-putzen">–</div><div class="stat-label" id="lbl-stat-putzen"></div></div>
     <div class="stat-card c-sauber"><div class="stat-number" id="stat-sauber">–</div><div class="stat-label" id="lbl-stat-sauber"></div></div>
@@ -34,86 +35,13 @@
     <path d="M0 32 L60 8 L110 20 L180 2 L250 18 L320 5 L390 19 L460 7 L530 22 L600 4 L680 32 Z" fill="#c8963a"/>
   </svg>
 
-  <!-- Benachrichtigungen -->
+  <!-- 2. Letzte Bestätigungen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-notif"></span></div>
     <div class="panel-body"><div id="notifications" class="notif-list"></div></div>
   </div>
 
-  <!-- Apartments -->
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title" id="lbl-panel-apts"></span>
-      <select id="filter-house" style="font-size:.75rem;background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:.25rem .5rem;"></select>
-    </div>
-    <div class="panel-body">
-      <table class="apt-table">
-        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th></th></tr></thead>
-        <tbody id="apt-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Häuser -->
-  <div class="panel">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
-    <div class="panel-body">
-      <table class="apt-table">
-        <thead><tr><th id="th-name-h"></th><th>Adresse</th><th>Apartments</th><th></th></tr></thead>
-        <tbody id="houses-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Struktur Import -->
-  <div class="panel">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
-    <div class="panel-body" style="padding:1.1rem">
-      <p class="import-hint" id="lbl-import-structure-hint"></p>
-      <div style="display:flex;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
-        <button class="btn-secondary" id="btn-download-template" style="font-size:.8rem"></button>
-        <label class="import-file-label" for="structure-file-input" id="lbl-structure-btn"></label>
-        <input type="file" id="structure-file-input" accept=".xlsx,.xls" style="display:none"/>
-        <span class="import-filename" id="structure-filename">–</span>
-      </div>
-      <div id="structure-preview"></div>
-      <button class="btn-primary" id="btn-structure-start" style="display:none"></button>
-      <div id="structure-result"></div>
-    </div>
-  </div>
-
-  <!-- Apartments -->
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title" id="lbl-panel-apts"></span>
-      <select id="filter-house" style="font-size:.75rem;background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:.25rem .5rem;"></select>
-    </div>
-    <div class="panel-body">
-      <table class="apt-table">
-        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th></th></tr></thead>
-        <tbody id="apt-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Struktur Import -->
-  <div class="panel">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
-    <div class="panel-body" style="padding:1.1rem">
-      <p class="import-hint" id="lbl-import-structure-hint"></p>
-      <div style="display:flex;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
-        <button class="btn-secondary" id="btn-download-template" style="font-size:.8rem"></button>
-        <label class="import-file-label" for="structure-file-input" id="lbl-structure-btn"></label>
-        <input type="file" id="structure-file-input" accept=".xlsx,.xls" style="display:none"/>
-        <span class="import-filename" id="structure-filename">–</span>
-      </div>
-      <div id="structure-preview"></div>
-      <button class="btn-primary" id="btn-structure-start" style="display:none"></button>
-      <div id="structure-result"></div>
-    </div>
-  </div>
-
-  <!-- Excel Import -->
+  <!-- 3. Belegungsplan importieren (Excel) -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-import"></span></div>
     <div class="panel-body" style="padding:1.1rem">
@@ -129,18 +57,49 @@
     </div>
   </div>
 
-  <!-- Häuser -->
+  <!-- 4. Apartments -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title" id="lbl-panel-apts"></span>
+      <select id="filter-house" style="font-size:.75rem;background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:.25rem .5rem;"></select>
+    </div>
+    <div class="panel-body">
+      <table class="apt-table">
+        <thead><tr><th id="th-name"></th><th id="th-house"></th><th id="th-status"></th><th id="th-checkout"></th><th></th></tr></thead>
+        <tbody id="apt-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 5. Häuser -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
     <div class="panel-body">
       <table class="apt-table">
-        <thead><tr><th id="th-name-h"></th><th>Adresse</th><th>Apartments</th><th></th></tr></thead>
+        <thead><tr><th id="th-name-h"></th><th>Apartments</th><th></th></tr></thead>
         <tbody id="houses-tbody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Haus hinzufügen -->
+  <!-- 6. Häuser & Apartments importieren -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
+    <div class="panel-body" style="padding:1.1rem">
+      <p class="import-hint" id="lbl-import-structure-hint"></p>
+      <div style="display:flex;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
+        <button class="btn-secondary" id="btn-download-template" style="font-size:.8rem"></button>
+        <label class="import-file-label" for="structure-file-input" id="lbl-structure-btn"></label>
+        <input type="file" id="structure-file-input" accept=".xlsx,.xls" style="display:none"/>
+        <span class="import-filename" id="structure-filename">–</span>
+      </div>
+      <div id="structure-preview"></div>
+      <button class="btn-primary" id="btn-structure-start" style="display:none"></button>
+      <div id="structure-result"></div>
+    </div>
+  </div>
+
+  <!-- 7. Haus hinzufügen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-add-house"></span></div>
     <div class="panel-body">
@@ -152,7 +111,7 @@
     </div>
   </div>
 
-  <!-- Apartment hinzufügen -->
+  <!-- 8. Apartment hinzufügen -->
   <div class="panel">
     <div class="panel-header"><span class="panel-title" id="lbl-panel-add-apt"></span></div>
     <div class="panel-body">
@@ -166,6 +125,7 @@
       </form>
     </div>
   </div>
+
 </main>
 
 <!-- Edit Modal -->
@@ -186,12 +146,12 @@
         <input id="modal-apt-pms" type="text"/>
       </div>
       <div class="modal-field">
-        <div class="modal-field-label" id="modal-lbl-house"></div>
-        <select id="modal-apt-house" style="background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:.65rem .8rem;font-size:.9rem;width:100%;"></select>
-      </div>
-      <div class="modal-field">
         <div class="modal-field-label" id="modal-lbl-time"></div>
         <input id="modal-apt-time" type="time" step="300"/>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label" id="modal-lbl-house"></div>
+        <select id="modal-apt-house" style="background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:.65rem .8rem;font-size:.9rem;width:100%;"></select>
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" id="modal-cancel"></button>
