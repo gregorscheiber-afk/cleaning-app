@@ -1,62 +1,81 @@
-const scrollEl   = document.getElementById('planer-scroll');
-const fromInput  = document.getElementById('from-date');
-const daysSelect = document.getElementById('days-select');
-const btnToday   = document.getElementById('btn-today');
+const scrollEl    = document.getElementById('planer-scroll');
+const fromInput   = document.getElementById('from-date');
+const daysSelect  = document.getElementById('days-select');
+const btnToday    = document.getElementById('btn-today');
+const houseFilter = document.getElementById('house-filter');
+const planBadge   = document.getElementById('plan-title-badge');
+const badgeHeader = document.getElementById('plan-badge');
+
+// Plan-Typ aus URL ermitteln
+const urlParams  = new URLSearchParams(window.location.search);
+const planType   = urlParams.get('plan') || 'wiwa';
+const isMainstreet = planType === 'mainstreet';
+
+const PLAN_LABELS = {
+  wiwa:       'Plan WIWA',
+  mainstreet: 'Plan MAINSTREET',
+};
+
+planBadge.textContent  = PLAN_LABELS[planType] || 'Belegungsplan';
+badgeHeader.textContent = PLAN_LABELS[planType] || 'Belegungsplan';
+document.title = `MYALPS · ${PLAN_LABELS[planType] || 'Belegungsplan'}`;
+
+// Hausfilter nur für WIWA
+if (!isMainstreet) houseFilter.style.display = 'block';
 
 // Farben pro Haus
-const HOUSE_COLORS = ['bk-color-0','bk-color-1','bk-color-2','bk-color-3','bk-color-4','bk-color-5'];
+const COLORS = ['bk-0','bk-1','bk-2','bk-3','bk-4','bk-5','bk-6','bk-7'];
 
-// Heute als Standard
+// Heute
 const todayStr = new Date().toISOString().substring(0,10);
-// 5 Tage zurück als Start
-const defaultFrom = new Date(Date.now() - 5*86400000).toISOString().substring(0,10);
-fromInput.value = defaultFrom;
-
-function dateStr(d) {
-  return new Date(d).toISOString().substring(0,10);
-}
+const startFrom = new Date(Date.now() - 3*86400000).toISOString().substring(0,10);
+fromInput.value = startFrom;
 
 function addDays(str, n) {
-  return dateStr(new Date(str).getTime() + n*86400000);
+  return new Date(new Date(str).getTime() + n*86400000).toISOString().substring(0,10);
 }
 
 function getKW(dateStr) {
-  const d = new Date(dateStr);
-  d.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
   d.setDate(d.getDate() + 3 - (d.getDay()+6)%7);
   const w = new Date(d.getFullYear(),0,4);
-  return 'KW ' + (1 + Math.round(((d-w)/86400000 - 3 + (w.getDay()+6)%7)/7));
+  return 'KW '+(1+Math.round(((d-w)/86400000-3+(w.getDay()+6)%7)/7));
 }
 
-function getDayName(dateStr) {
-  return new Date(dateStr).toLocaleDateString('de-DE', { weekday: 'short' });
-}
+function dayName(str) { return new Date(str).toLocaleDateString('de-DE',{weekday:'short'}); }
+function dayNum(str)  { return new Date(str).getDate(); }
+function isWeekend(str) { const d=new Date(str).getDay(); return d===0||d===6; }
 
-function getDayNum(dateStr) {
-  return new Date(dateStr).getDate();
-}
+function esc(s) { if(!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
-function getMonth(dateStr) {
-  return new Date(dateStr).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-}
-
-function isWeekend(dateStr) {
-  const d = new Date(dateStr).getDay();
-  return d === 0 || d === 6;
+async function loadHouses(data) {
+  if (isMainstreet) return;
+  const current = houseFilter.value;
+  houseFilter.innerHTML = '<option value="">Alle Häuser</option>';
+  (data.houses || []).forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h.id; opt.textContent = h.name;
+    if (String(h.id) === current) opt.selected = true;
+    houseFilter.appendChild(opt);
+  });
 }
 
 async function loadPlan() {
-  const from = fromInput.value || defaultFrom;
-  const days = parseInt(daysSelect.value) || 30;
+  const from    = fromInput.value || startFrom;
+  const days    = parseInt(daysSelect.value) || 30;
+  const houseId = houseFilter.value;
 
   scrollEl.innerHTML = '<div class="planer-empty">Wird geladen …</div>';
 
   try {
-    const res  = await fetch(`/api/plan?from=${from}&days=${days}`);
+    let url = `/api/plan?from=${from}&days=${days}&plan=${planType}`;
+    if (houseId && !isMainstreet) url += `&house_id=${houseId}`;
+    const res  = await fetch(url);
     const data = await res.json();
+    await loadHouses(data);
     renderPlan(data, from, days);
   } catch(e) {
-    scrollEl.innerHTML = `<div class="planer-empty">Fehler beim Laden: ${e.message}</div>`;
+    scrollEl.innerHTML = `<div class="planer-empty">Fehler: ${e.message}</div>`;
   }
 }
 
@@ -67,168 +86,167 @@ function renderPlan(data, from, days) {
     return;
   }
 
-  // Datumsliste aufbauen
-  const dates = [];
-  for (let i = 0; i < days; i++) dates.push(addDays(from, i));
+  // Datumsliste
+  const dates = Array.from({length: days}, (_, i) => addDays(from, i));
 
-  // KW-Gruppen für Header
+  // KW-Gruppen
   const kwGroups = [];
-  let lastKW = '';
   dates.forEach((d, i) => {
     const kw = getKW(d);
-    if (kw !== lastKW) { kwGroups.push({ label: kw, start: i, count: 0 }); lastKW = kw; }
+    if (!kwGroups.length || kwGroups[kwGroups.length-1].label !== kw)
+      kwGroups.push({label: kw, start: i, count: 0});
     kwGroups[kwGroups.length-1].count++;
   });
 
-  // Häuser-Gruppen
-  const houseMap = {};
+  // Häuser gruppieren
+  const houseMap = new Map();
   apartments.forEach(apt => {
     const hid = apt.house_id || 0;
-    if (!houseMap[hid]) houseMap[hid] = { name: apt.house_name || '–', apts: [] };
-    houseMap[hid].apts.push(apt);
+    if (!houseMap.has(hid)) houseMap.set(hid, {name: apt.house_name || '–', apts: []});
+    houseMap.get(hid).apts.push(apt);
   });
 
-  const totalCols = 1 + days; // 1 für Apartment-Namen + N Tage
-  const gridStyle = `grid-template-columns: 140px ${Array(days).fill('38px').join(' ')}`;
+  const COL_W = 36; // px pro Tag
 
-  let html = `<div class="planer-grid" style="${gridStyle}">`;
+  // HTML aufbauen
+  let html = `<table class="planer-table">
+  <colgroup>
+    <col style="width:130px"/>
+    ${dates.map(() => `<col style="width:${COL_W}px"/>`).join('')}
+  </colgroup>
+  <thead>
+    <tr class="row-kw">
+      <th class="th-name" rowspan="3" style="top:0;z-index:30;vertical-align:middle;text-align:left;font-size:.68rem">
+        ${new Date(from).toLocaleDateString('de-DE',{month:'long',year:'numeric'})}
+      </th>`;
 
-  // ── Header Zeile 1: KW ──
-  html += `<div class="cell-header col-apt" style="position:sticky;top:0;z-index:11;border-bottom:1px solid var(--line)">
-    ${getMonth(from)}
-  </div>`;
   kwGroups.forEach(g => {
-    html += `<div class="cell-header kw" style="grid-column:span ${g.count};position:sticky;top:0">${g.label}</div>`;
+    html += `<th colspan="${g.count}" style="top:0">${g.label}</th>`;
   });
 
-  // ── Header Zeile 2: Wochentag ──
-  html += `<div class="cell-header col-apt" style="position:sticky;top:28px;z-index:11"></div>`;
+  html += `</tr><tr class="row-day">`;
   dates.forEach(d => {
-    const weekend = isWeekend(d) ? ' is-weekend' : '';
-    const today   = d === todayStr ? ' is-today' : '';
-    html += `<div class="cell-header day-name${weekend}${today}" style="position:sticky;top:28px">${getDayName(d)}</div>`;
+    const cls = [isWeekend(d)?'is-weekend':'', d===todayStr?'is-today':''].filter(Boolean).join(' ');
+    html += `<th class="${cls}">${dayName(d)}</th>`;
   });
 
-  // ── Header Zeile 3: Datum ──
-  html += `<div class="cell-header col-apt" style="position:sticky;top:52px;z-index:11"></div>`;
+  html += `</tr><tr class="row-date">`;
   dates.forEach(d => {
-    const weekend = isWeekend(d) ? ' is-weekend' : '';
-    const today   = d === todayStr ? ' is-today' : '';
-    html += `<div class="cell-header date-num${weekend}${today}" style="position:sticky;top:52px">${getDayNum(d)}</div>`;
+    const cls = [isWeekend(d)?'is-weekend':'', d===todayStr?'is-today':''].filter(Boolean).join(' ');
+    html += `<th class="${cls}">${dayNum(d)}</th>`;
   });
 
-  // ── Haus + Apartment Zeilen ──
-  let houseColorIdx = 0;
-  const dateIndex = Object.fromEntries(dates.map((d,i) => [d,i]));
+  html += `</tr></thead><tbody>`;
 
-  Object.values(houseMap).forEach(house => {
+  // Datum → Index Map
+  const dateIdx = {};
+  dates.forEach((d,i) => dateIdx[d] = i);
+
+  let colorIdx = 0;
+
+  houseMap.forEach((house) => {
+    const color = COLORS[colorIdx++ % COLORS.length];
+
     // Haus-Trennzeile
-    html += `<div class="cell-house-label">🏠 ${esc(house.name)}</div>`;
-    html += `<div class="cell-house-spacer" style="grid-column:span ${days}"></div>`;
-
-    const colorClass = HOUSE_COLORS[houseColorIdx % HOUSE_COLORS.length];
-    houseColorIdx++;
+    html += `<tr class="tr-house">
+      <td class="td-name" style="background:var(--surface-3);color:var(--accent);font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;height:28px">
+        🏠 ${esc(house.name)}
+      </td>
+      <td colspan="${days}" style="background:var(--surface-3);border-bottom:1px solid var(--line)"></td>
+    </tr>`;
 
     house.apts.forEach(apt => {
-      // Apartment-Namenszeile
-      html += `
-        <div class="cell-apt-name">
-          <div>
-            <span class="apt-status-dot dot-${apt.status}"></span>
-            <span class="apt-code">${esc(apt.pms_code || apt.name)}</span>
+      // Checkout-Tage bestimmen
+      const checkoutDays = new Set(apt.bookings.map(b => b.end.substring(0,10)));
+
+      html += `<tr class="tr-apt" data-apt="${apt.id}">
+        <td class="td-name">
+          <div class="td-name-inner">
+            <div>
+              <span class="status-dot dot-${apt.status}"></span>
+              <span class="apt-code">${esc(apt.pms_code || apt.name)}</span>
+            </div>
+            <div class="apt-time-label">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</div>
           </div>
-          <div style="font-size:.65rem;color:var(--ink-muted)">${esc(apt.name)}</div>
-        </div>`;
+        </td>`;
 
-      // Tages-Zellen für dieses Apartment
-      // Erstmal alle Zellen als leer
-      const cellMap = {}; // index → info
-      const checkoutDays = new Set();
-      const checkinDays  = new Set();
-
-      apt.bookings.forEach(b => {
-        const bStart = b.start.substring(0,10);
-        const bEnd   = b.end.substring(0,10);
-        checkoutDays.add(bEnd);
-        checkinDays.add(bStart);
+      dates.forEach(d => {
+        const cls = [
+          'td-day',
+          isWeekend(d) ? 'is-weekend' : '',
+          d === todayStr ? 'is-today' : '',
+          checkoutDays.has(d) ? 'is-checkout' : '',
+        ].filter(Boolean).join(' ');
+        html += `<td class="${cls}" data-apt="${apt.id}" data-date="${d}"></td>`;
       });
 
-      dates.forEach((d, i) => {
-        const weekend  = isWeekend(d) ? ' is-weekend' : '';
-        const isToday  = d === todayStr ? ' is-today' : '';
-        const isCO     = checkoutDays.has(d) ? ' checkout-day' : '';
-        html += `<div class="cell-day${weekend}${isToday}${isCO}" data-apt="${apt.id}" data-date="${d}" data-col="${i}"></div>`;
-      });
-
-      // Buchungsblöcke werden via JS positioniert (after render)
-      // Wir encodieren die Buchungsdaten als data-Attribute auf der Zeile – nein,
-      // wir bauen die Blöcke direkt als HTML mit absoluter Positionierung
+      html += `</tr>`;
     });
   });
 
-  html += '</div>';
+  html += `</tbody></table>`;
   scrollEl.innerHTML = html;
 
   // Buchungsblöcke einzeichnen
-  let hi = 0;
-  Object.values(houseMap).forEach(house => {
-    const colorClass = HOUSE_COLORS[hi % HOUSE_COLORS.length];
-    hi++;
+  let ci = 0;
+  houseMap.forEach((house) => {
+    const color = COLORS[ci++ % COLORS.length];
     house.apts.forEach(apt => {
       apt.bookings.forEach(b => {
         const bStart = b.start.substring(0,10);
         const bEnd   = b.end.substring(0,10);
 
-        // Startindex (geclippt auf sichtbaren Bereich)
-        const startIdx = Math.max(0, dates.indexOf(bStart));
-        // Endindex (Checkout-Tag ist Leerfeld, Block endet davor)
-        const endIdx   = Math.min(days, dates.indexOf(bEnd) < 0 ? days : dates.indexOf(bEnd));
+        // Sichtbarer Startindex
+        const si = dateIdx[bStart] !== undefined ? dateIdx[bStart] : dates.findIndex(d => d >= bStart);
+        if (si < 0 || si >= days) return;
 
-        if (startIdx >= days || endIdx <= 0 || startIdx >= endIdx) return;
-        const spanCols = endIdx - startIdx;
+        // Sichtbarer Endindex (Checkout-Tag nicht mehr belegt)
+        let ei = dateIdx[bEnd] !== undefined ? dateIdx[bEnd] : days;
+        ei = Math.min(ei, days);
 
-        // Erste Zelle dieser Buchung suchen
-        const firstCell = scrollEl.querySelector(
-          `[data-apt="${apt.id}"][data-date="${dates[startIdx]}"]`
-        );
-        if (!firstCell) return;
+        const span = ei - si;
+        if (span <= 0) return;
+
+        const cell = scrollEl.querySelector(`[data-apt="${apt.id}"][data-date="${dates[si]}"]`);
+        if (!cell) return;
 
         const block = document.createElement('div');
-        block.className = `booking-block ${colorClass}`;
-        // Breite = spanCols * 38px - Padding
-        block.style.left   = '2px';
-        block.style.width  = `calc(${spanCols} * 38px - 4px)`;
-        block.title = `${b.guest_name || ''} · ${b.persons || ''} · ${bStart} → ${bEnd}`;
-
+        block.className = `bk ${color}`;
+        block.style.width = `${span * COL_W - 2}px`;
+        block.title = `${b.guest_name||''} · ${b.persons||''} · ${bStart} → ${bEnd}`;
         block.innerHTML = `
-          <span class="bk-guest">${esc(b.guest_name || '–')}</span>
+          <span class="bk-guest">${esc(b.guest_name||'–')}</span>
           ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}`;
+        cell.appendChild(block);
 
-        firstCell.appendChild(block);
+        // Checkout-Marker auf dem Abreise-Tag
+        if (dateIdx[bEnd] !== undefined && dateIdx[bEnd] < days) {
+          const coCell = scrollEl.querySelector(`[data-apt="${apt.id}"][data-date="${bEnd}"]`);
+          if (coCell) {
+            const marker = document.createElement('div');
+            marker.className = 'co-marker';
+            coCell.appendChild(marker);
+          }
+        }
       });
     });
   });
 
-  // Heute scrollen
+  // Zu Heute scrollen
   const todayCell = scrollEl.querySelector(`[data-date="${todayStr}"]`);
   if (todayCell) {
     setTimeout(() => {
-      const offset = todayCell.offsetLeft - 160;
-      scrollEl.scrollLeft = Math.max(0, offset);
+      scrollEl.scrollLeft = Math.max(0, todayCell.offsetLeft - 150);
     }, 50);
   }
-}
-
-function esc(s) {
-  if (!s) return '';
-  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
 }
 
 // Events
 fromInput.addEventListener('change', loadPlan);
 daysSelect.addEventListener('change', loadPlan);
+houseFilter.addEventListener('change', loadPlan);
 btnToday.addEventListener('click', () => {
-  fromInput.value = new Date(Date.now() - 5*86400000).toISOString().substring(0,10);
+  fromInput.value = new Date(Date.now()-3*86400000).toISOString().substring(0,10);
   loadPlan();
 });
 

@@ -634,6 +634,17 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
 document.getElementById('filter-house').addEventListener('change', loadApartments);
 document.getElementById('btn-lang').addEventListener('click', () => { localStorage.removeItem('ma_lang'); location.reload(); });
 
+// Plan-Dropdown
+const planMenuBtn = document.getElementById('btn-plan-menu');
+const planDropdown = document.getElementById('plan-dropdown');
+if (planMenuBtn) {
+  planMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    planDropdown.style.display = planDropdown.style.display === 'none' ? 'block' : 'none';
+  });
+  document.addEventListener('click', () => { if(planDropdown) planDropdown.style.display = 'none'; });
+}
+
 // ── Start ─────────────────────────────────────────────────
 initLangScreen(async () => {
   applyLabels();

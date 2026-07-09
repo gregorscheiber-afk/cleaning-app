@@ -19,7 +19,13 @@
     <span class="page-role-badge" id="lbl-role"></span>
     <button class="nav-pill" id="btn-lang">🌐</button>
     <a class="nav-pill" href="/qrcodes.html">📲 QR</a>
-    <a class="nav-pill" href="/planer.html">📅 Plan</a>
+    <div style="position:relative;display:inline-block" id="plan-menu-wrap">
+      <button class="nav-pill" id="btn-plan-menu" style="cursor:pointer">📅 Plan ▾</button>
+      <div id="plan-dropdown" style="display:none;position:absolute;right:0;top:110%;background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:170px;z-index:50;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.4)">
+        <a href="/planer.html" style="display:block;padding:.65rem 1rem;font-size:.82rem;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)">📅 Plan WIWA</a>
+        <a href="/planer.html?plan=mainstreet" style="display:block;padding:.65rem 1rem;font-size:.82rem;color:var(--ink);text-decoration:none">📅 Plan MAINSTREET</a>
+      </div>
+    </div>
     <a class="nav-pill" href="/" id="lbl-clean"></a>
   </div>
 </header>
