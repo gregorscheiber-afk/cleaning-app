@@ -1382,3 +1382,88 @@ main {
 }
 
 .btn-del-booking:hover { color: var(--putzen); }
+
+/* ── PIN-Screen ── */
+#pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn .22s ease;
+}
+
+.pin-box {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pin-role {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 999px;
+  padding: .3rem .9rem;
+  margin: .75rem 0 1.5rem;
+}
+
+.pin-input-wrap {
+  display: flex;
+  gap: .5rem;
+  width: 100%;
+  margin-bottom: .6rem;
+}
+
+.pin-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  font-size: 1.2rem;
+  color: var(--ink);
+  outline: none;
+  letter-spacing: .2em;
+  text-align: center;
+  transition: border-color .14s;
+}
+
+.pin-input:focus { border-color: var(--accent); }
+.pin-input::placeholder { font-size: .85rem; letter-spacing: .04em; color: var(--ink-muted); }
+
+.pin-btn {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: var(--radius);
+  width: 52px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .14s;
+  flex-shrink: 0;
+}
+
+.pin-btn:hover { background: var(--accent-hover); }
+
+.pin-error {
+  color: var(--putzen);
+  font-size: .82rem;
+  height: 1.2rem;
+  text-align: center;
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25%      { transform: translateX(-8px); }
+  75%      { transform: translateX(8px); }
+}

@@ -17,6 +17,7 @@ const notesRouter       = require('./routes/notes');
 const importRouter      = require('./routes/import');
 const bookingsRouter    = require('./routes/bookings');
 const planRouter        = require('./routes/plan');
+const authRouter        = require('./routes/auth');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +32,7 @@ app.use('/api',            notesRouter);
 app.use('/api',            importRouter);
 app.use('/api',            bookingsRouter);
 app.use('/api',            planRouter);
+app.use('/api',            authRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/test-db', async (_req, res) => {
   try {
