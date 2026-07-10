@@ -10,7 +10,9 @@
 <body>
 <header class="topbar">
   <a class="topbar-logo" href="/">
-    <img src="/logo.png" class="logo-mark" alt="MYALPS Logo" style="width:32px;height:32px;object-fit:contain"/>
+    <svg class="logo-mark" viewBox="0 0 40 32" fill="none">
+      <path d="M0 30 L8 14 L13 21 L20 6 L27 21 L32 14 L40 30 Z" fill="#c8963a"/>
+    </svg>
     <div><span class="logo-name">MYALPS</span><span class="logo-sub">Apartments und Chalets</span></div>
   </a>
   <div class="topbar-right">
@@ -141,6 +143,14 @@
     </div>
   </div>
 </main>
+
+  <!-- Reinigungslog -->
+  <div class="panel panel-mgmt">
+    <div class="panel-header"><span class="panel-title">📊 Reinigungslog</span></div>
+    <div class="panel-body" style="padding:1.1rem" id="cleaning-log-body">
+      <div style="color:var(--ink-muted);font-size:.82rem">Wird geladen…</div>
+    </div>
+  </div>
 
 <!-- Edit Modal -->
 <div id="edit-modal" class="modal-overlay" style="display:none">

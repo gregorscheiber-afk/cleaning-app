@@ -43,4 +43,39 @@ router.get('/cleanings', async (req, res, next) => {
   } catch(e) { next(e); }
 });
 
+// GET /api/cleanings/stats – Reinigungszeiten Statistik
+router.get('/cleanings/stats', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        c.confirmed_at,
+        a.name as apt_name,
+        h.name as house_name,
+        EXTRACT(HOUR FROM c.confirmed_at AT TIME ZONE 'Europe/Vienna') as hour
+      FROM cleanings c
+      JOIN apartments a ON a.id = c.apartment_id
+      LEFT JOIN houses h ON h.id = a.house_id
+      ORDER BY c.confirmed_at DESC
+      LIMIT 500
+    `);
+
+    // Nach Zeitblock gruppieren
+    const slots = [
+      { label: 'Vor 09:00', min: 0,  max: 9  },
+      { label: '09–11 Uhr', min: 9,  max: 11 },
+      { label: '11–13 Uhr', min: 11, max: 13 },
+      { label: '13–15 Uhr', min: 13, max: 15 },
+      { label: '15–17 Uhr', min: 15, max: 17 },
+      { label: 'Nach 17:00', min: 17, max: 24 },
+    ];
+
+    const counts = slots.map(s => ({
+      label: s.label,
+      count: rows.filter(r => r.hour >= s.min && r.hour < s.max).length,
+    }));
+
+    res.json({ total: rows.length, slots: counts, recent: rows.slice(0, 20) });
+  } catch(e) { next(e); }
+});
+
 module.exports = router;

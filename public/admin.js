@@ -626,6 +626,65 @@ if (planMenuBtn) {
   document.addEventListener('click', () => { if(planDropdown) planDropdown.style.display = 'none'; });
 }
 
+// ── Reinigungslog ────────────────────────────────────────
+async function loadCleaningLog() {
+  const body = document.getElementById('cleaning-log-body');
+  if (!body) return;
+  try {
+    const { total, slots, recent } = await (await fetch('/api/cleanings/stats')).json();
+
+    if (!total) {
+      body.innerHTML = `<div style="color:var(--ink-muted);font-size:.82rem">Noch keine Reinigungen bestätigt.</div>`;
+      return;
+    }
+
+    // Balkendiagramm
+    const maxCount = Math.max(...slots.map(s => s.count), 1);
+    const bars = slots.map(s => {
+      const pct = total > 0 ? Math.round(s.count / total * 100) : 0;
+      const barW = Math.round(s.count / maxCount * 100);
+      return `
+        <div style="display:grid;grid-template-columns:90px 1fr 38px;align-items:center;gap:.6rem;margin-bottom:.55rem">
+          <div style="font-size:.72rem;color:var(--ink-soft);text-align:right">${s.label}</div>
+          <div style="height:22px;background:var(--surface-3);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:4px;transition:width .4s ease;display:flex;align-items:center;padding:0 .4rem">
+              ${s.count > 0 ? `<span style="font-size:.65rem;font-weight:700;color:#111;white-space:nowrap">${s.count}×</span>` : ''}
+            </div>
+          </div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--ink-soft)">${pct}%</div>
+        </div>`;
+    }).join('');
+
+    // Letzte Reinigungen
+    const recentRows = recent.slice(0,8).map(r => {
+      const d = new Date(r.confirmed_at);
+      const dateStr = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit' });
+      const timeStr = d.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--line)">
+          <div>
+            <span style="font-size:.82rem;font-weight:600;color:var(--ink)">${esc(r.apt_name)}</span>
+            ${r.house_name ? `<span style="font-size:.72rem;color:var(--ink-muted)"> · ${esc(r.house_name)}</span>` : ''}
+          </div>
+          <div style="font-size:.72rem;color:var(--ink-soft);white-space:nowrap">${dateStr} ${timeStr}</div>
+        </div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:.8rem">
+        Zeitverteilung · ${total} Reinigungen gesamt
+      </div>
+      ${bars}
+      <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:1.1rem 0 .6rem">
+        Letzte Reinigungen
+      </div>
+      ${recentRows}`;
+  } catch(e) {
+    document.getElementById('cleaning-log-body').innerHTML =
+      `<div style="color:var(--putzen);font-size:.82rem">Fehler beim Laden.</div>`;
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────
 initLangScreen(async () => {
   applyLabels();
@@ -634,4 +693,5 @@ initLangScreen(async () => {
   loadNotifications();
   setInterval(loadApartments,    30000);
   setInterval(loadNotifications,  8000);
+  loadCleaningLog();
 });

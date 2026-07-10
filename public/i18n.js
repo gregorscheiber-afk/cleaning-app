@@ -390,7 +390,9 @@ function initLangScreen(onDone) {
   overlay.id = 'lang-overlay';
   overlay.innerHTML = `
     <div class="lang-box">
-      <img src="/logo.png" style="width:52px;height:52px;object-fit:contain;margin-bottom:.25rem" alt="MYALPS"/>
+      <svg class="lang-logo" viewBox="0 0 60 48" fill="none">
+        <path d="M0 45 L12 21 L20 32 L30 9 L40 32 L48 21 L60 45 Z" fill="#c8963a"/>
+      </svg>
       <div class="lang-brand">MYALPS</div>
       <div class="lang-sub">Apartments und Chalets</div>
       <div class="lang-divider"></div>
