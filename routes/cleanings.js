@@ -8,7 +8,7 @@ router.post('/apartments/:id/confirm-clean', async (req, res, next) => {
   try {
     const { cleaner_name, note } = req.body || {};
     if (!cleaner_name) return res.status(400).json({ error: 'cleaner_name ist erforderlich' });
-    const { rows } = await pool.query(`SELECT * FROM apartments WHERE id=$1`, [req.params.id]);
+    const { rows } = await pool.query(`SELECT a.*, h.name as house_name FROM apartments a LEFT JOIN houses h ON h.id=a.house_id WHERE a.id=$1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Apartment nicht gefunden' });
     const apt = rows[0];
     await pool.query(

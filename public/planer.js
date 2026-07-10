@@ -215,24 +215,23 @@ function renderPlan(data, from, days) {
         const cell = scrollEl.querySelector(`[data-apt="${apt.id}"][data-date="${dates[si]}"]`);
         if (!cell) return;
 
+        // Mitte-zu-Mitte Positionierung:
+        // Block startet in der Mitte des Anreisetages, endet in der Mitte des Abreisetages
+        const startsBeforeView = bStart < dates[0];
+        const endsAfterView   = ei >= days;
+        const leftOffset  = startsBeforeView ? 0 : Math.floor(COL_W / 2);
+        const rightOffset = endsAfterView    ? 0 : Math.floor(COL_W / 2);
+        const blockWidth  = span * COL_W - leftOffset + rightOffset - 2;
+
         const block = document.createElement('div');
         block.className = `bk ${color}`;
-        block.style.width = `${span * COL_W - 2}px`;
+        block.style.left  = `${leftOffset + 1}px`;
+        block.style.width = `${Math.max(blockWidth, 10)}px`;
         block.title = `${b.guest_name||''} · ${b.persons||''} · ${bStart} → ${bEnd}`;
         block.innerHTML = `
           <span class="bk-guest">${esc(b.guest_name||'–')}</span>
           ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}`;
         cell.appendChild(block);
-
-        // Checkout-Marker auf dem Abreise-Tag
-        if (dateIdx[bEnd] !== undefined && dateIdx[bEnd] < days) {
-          const coCell = scrollEl.querySelector(`[data-apt="${apt.id}"][data-date="${bEnd}"]`);
-          if (coCell) {
-            const marker = document.createElement('div');
-            marker.className = 'co-marker';
-            coCell.appendChild(marker);
-          }
-        }
       });
     });
   });

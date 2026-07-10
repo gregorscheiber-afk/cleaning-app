@@ -1,7 +1,8 @@
 const { pool } = require('../db');
 
 async function notifyApartmentClean(apartment, cleanerName) {
-  const message = `✅ ${apartment.name} wurde von ${cleanerName} als sauber bestätigt.`;
+  const housePart = apartment.house_name ? ` - ${apartment.house_name}` : '';
+  const message = `✅ ${apartment.name}${housePart} wurde gereinigt.`;
   await pool.query(
     `INSERT INTO notifications (apartment_id, message) VALUES ($1, $2)`,
     [apartment.id, message]

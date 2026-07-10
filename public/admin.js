@@ -556,7 +556,7 @@ async function loadNotifications() {
   const url = lastTs ? `/api/notifications?since=${encodeURIComponent(lastTs)}` : '/api/notifications';
   const items = await (await fetch(url)).json();
   if (items.length > 0) {
-    if (lastTs) { showToast(items[0].message); loadApartments(); loadHouses(); }
+    if (lastTs) { loadApartments(); loadHouses(); }
     lastTs = items[0].created_at;
   }
   if (!lastTs) lastTs = new Date().toISOString();

@@ -67,6 +67,14 @@ const TRANSLATIONS = {
     checkoutTimePlaceholder: 'e.g. 09:30',
     cleanFrom: 'Cleaning from',
     adults: 'Adults',
+    confirmTitle: 'Confirm cleaning',
+    confirmCleanLabel: 'Apartment fully cleaned',
+    confirmCleanSub: 'All rooms, bathrooms and kitchen clean',
+    confirmPersonsLabel: n => `Beds & towels prepared for ${n}`,
+    confirmNotePrefix: 'Done: ',
+    confirmBtn: 'Confirm now ✓',
+    confirmCancel: 'Cancel',
+    confirmCheckAll: 'Please check all items',
     lastMinute: '🔔 New booking',
     panelImportStructure: 'Import houses & apartments (Excel)',
     importStructureHint: 'Excel with columns: House · Apartment · iCal URL · PMS Code. Existing entries will be updated.',
@@ -130,6 +138,14 @@ const TRANSLATIONS = {
     checkoutTimePlaceholder: 'örn. 09:30',
     cleanFrom: 'Temizlik başlangıcı',
     adults: 'Yetişkin',
+    confirmTitle: 'Temizliği onayla',
+    confirmCleanLabel: 'Daire tamamen temizlendi',
+    confirmCleanSub: 'Tüm odalar, banyolar ve mutfak temiz',
+    confirmPersonsLabel: n => `${n} kişi için yatak ve havlular hazır`,
+    confirmNotePrefix: 'Yapıldı: ',
+    confirmBtn: 'Şimdi onayla ✓',
+    confirmCancel: 'İptal',
+    confirmCheckAll: 'Lütfen tüm maddeleri işaretleyin',
     lastMinute: '🔔 Yeni rezervasyon',
     panelImportStructure: 'Ev & daire içe aktar (Excel)',
     importStructureHint: 'Sütunlar: Ev · Daire · iCal URL · PMS Kodu.',
@@ -169,6 +185,14 @@ const TRANSLATIONS = {
     checkoutTimePlaceholder: 'npr. 09:30',
     cleanFrom: 'Čišćenje od',
     adults: 'Odrasli',
+    confirmTitle: 'Potvrdi čišćenje',
+    confirmCleanLabel: 'Apartman potpuno očišćen',
+    confirmCleanSub: 'Sve sobe, kupaonice i kuhinja čisti',
+    confirmPersonsLabel: n => `Kreveti i ručnici za ${n} pripremljeni`,
+    confirmNotePrefix: 'Obavljeno: ',
+    confirmBtn: 'Potvrdi ✓',
+    confirmCancel: 'Odustani',
+    confirmCheckAll: 'Molimo potvrdite sve stavke',
     lastMinute: '🔔 Nova rezervacija',
     panelImportStructure: 'Uvezi kuće & apartmane (Excel)',
     importStructureHint: 'Excel s kolonama: Kuća · Apartman · iCal URL · PMS Kod.',
@@ -210,6 +234,14 @@ const TRANSLATIONS = {
     checkoutTimePlaceholder: 'z. B. 09:30',
     cleanFrom: 'Reinigung ab',
     adults: 'Erw.',
+    confirmTitle: 'Reinigung bestätigen',
+    confirmCleanLabel: 'Apartment vollständig gereinigt',
+    confirmCleanSub: 'Alle Räume, Bäder und Küche sauber',
+    confirmPersonsLabel: n => `Betten & Handtücher für ${n} vorbereitet`,
+    confirmNotePrefix: 'Erledigt: ',
+    confirmBtn: 'Jetzt bestätigen ✓',
+    confirmCancel: 'Abbrechen',
+    confirmCheckAll: 'Bitte alle Punkte abhaken',
     lastMinute: '🔔 Neue Buchung',
     panelImportStructure: 'Häuser & Apartments importieren (Excel)',
     importStructureHint: 'Excel mit Spalten: Haus · Apartment · iCal URL · PMS Code. Bestehende Einträge werden aktualisiert, neue angelegt.',
@@ -358,11 +390,9 @@ function initLangScreen(onDone) {
   overlay.id = 'lang-overlay';
   overlay.innerHTML = `
     <div class="lang-box">
-      <svg class="lang-logo" viewBox="0 0 60 48" fill="none">
-        <path d="M0 45 L12 21 L20 32 L30 9 L40 32 L48 21 L60 45 Z" fill="#c8963a"/>
-      </svg>
+      <img src="/logo.png" style="width:52px;height:52px;object-fit:contain;margin-bottom:.25rem" alt="MYALPS"/>
       <div class="lang-brand">MYALPS</div>
-      <div class="lang-sub">Homes · Ötztal</div>
+      <div class="lang-sub">Apartments und Chalets</div>
       <div class="lang-divider"></div>
       <div class="lang-list">
         ${LANG_ORDER.map(code => {

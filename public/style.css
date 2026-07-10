@@ -1541,3 +1541,136 @@ main {
   color: var(--ink-soft);
   line-height: 1.6;
 }
+
+/* ── Bestätigungs-Sheet ── */
+#confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 800;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn .2s ease;
+}
+
+#confirm-overlay.closing { animation: fadeOut .22s ease forwards; }
+
+.confirm-sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 520px;
+  padding: 1.5rem 1.25rem 2.5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.confirm-sheet-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: .3rem;
+  letter-spacing: -.01em;
+}
+
+.confirm-sheet-apt {
+  font-size: .78rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  cursor: pointer;
+  transition: border-color .14s;
+  user-select: none;
+}
+
+.confirm-item:hover { border-color: var(--accent); }
+
+.confirm-item.checked {
+  border-color: var(--sauber);
+  background: var(--sauber-bg);
+}
+
+.confirm-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  transition: all .14s;
+  margin-top: .05rem;
+  background: var(--surface-3);
+}
+
+.confirm-item.checked .confirm-checkbox {
+  background: var(--sauber);
+  border-color: var(--sauber);
+  color: white;
+}
+
+.confirm-item-text {
+  flex: 1;
+  font-size: .88rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.confirm-item-sub {
+  font-size: .75rem;
+  color: var(--ink-soft);
+  margin-top: .2rem;
+}
+
+.btn-confirm-all {
+  width: 100%;
+  background: var(--sauber);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+  letter-spacing: .02em;
+}
+
+.btn-confirm-all:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.btn-confirm-cancel {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: .82rem;
+  margin-top: .75rem;
+  cursor: pointer;
+  padding: .4rem;
+}

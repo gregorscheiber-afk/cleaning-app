@@ -207,23 +207,127 @@ function render(apartments) {
   });
 }
 
-async function confirmClean(btn) {
-  btn.disabled = true;
-  btn.textContent = t('saving');
-  try {
-    const res = await fetch(`/api/apartments/${btn.dataset.id}/confirm-clean`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cleaner_name: '–' }),
+function openConfirmSheet(aptId, aptName, apt) {
+  // Bestehenden Overlay entfernen
+  document.getElementById('confirm-overlay')?.remove();
+
+  // Checkliste aufbauen
+  const items = [];
+
+  // 1. Immer: sauber gereinigt
+  items.push({
+    id: 'clean',
+    label: t('confirmCleanLabel'),
+    sub: t('confirmCleanSub'),
+    icon: '🧹',
+  });
+
+  // 2. Personenanzahl – aus nächster Buchung
+  const nextBooking = apt.upcoming_bookings?.[0];
+  if (nextBooking?.persons) {
+    items.push({
+      id: 'persons',
+      label: t('confirmPersonsLabel', nextBooking.persons),
+      sub: `${t('checkin')}: ${fmtDate(nextBooking.start)}`,
+      icon: '👥',
     });
-    if (!res.ok) throw new Error();
-    showToast(t('toastConfirmed'));
-    loadApartments();
-  } catch {
-    btn.disabled = false;
-    btn.textContent = t('btnDone');
-    showToast(t('toastError'));
   }
+
+  // 3. Jede Admin-Notiz als eigene Checkbox
+  (apt.notes || []).forEach((n, i) => {
+    items.push({
+      id: `note_${n.id}`,
+      label: t('confirmNotePrefix') + n.message,
+      sub: '',
+      icon: '📋',
+    });
+  });
+
+  const checkedState = {};
+  items.forEach(item => checkedState[item.id] = false);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'confirm-overlay';
+
+  function renderSheet() {
+    const allChecked = Object.values(checkedState).every(Boolean);
+    overlay.innerHTML = `
+      <div class="confirm-sheet">
+        <div class="confirm-sheet-title">${t('confirmTitle')}</div>
+        <div class="confirm-sheet-apt">${esc(aptName)}</div>
+        <div class="confirm-checklist">
+          ${items.map(item => `
+            <div class="confirm-item${checkedState[item.id] ? ' checked' : ''}" data-item="${item.id}">
+              <div class="confirm-checkbox">${checkedState[item.id] ? '✓' : ''}</div>
+              <div>
+                <div class="confirm-item-text">${esc(item.icon)} ${esc(item.label)}</div>
+                ${item.sub ? `<div class="confirm-item-sub">${esc(item.sub)}</div>` : ''}
+              </div>
+            </div>`).join('')}
+        </div>
+        <button class="btn-confirm-all" id="btn-confirm-all" ${allChecked ? '' : 'disabled'}>
+          ${t('confirmBtn')}
+        </button>
+        <button class="btn-confirm-cancel" id="btn-confirm-cancel">${t('confirmCancel')}</button>
+      </div>`;
+
+    // Checkbox-Klick
+    overlay.querySelectorAll('.confirm-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.item;
+        checkedState[id] = !checkedState[id];
+        renderSheet();
+      });
+    });
+
+    // Bestätigen
+    document.getElementById('btn-confirm-all')?.addEventListener('click', async () => {
+      if (!Object.values(checkedState).every(Boolean)) return;
+      document.getElementById('btn-confirm-all').disabled = true;
+      document.getElementById('btn-confirm-all').textContent = t('saving');
+      try {
+        const res = await fetch(`/api/apartments/${aptId}/confirm-clean`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cleaner_name: '–' }),
+        });
+        if (!res.ok) throw new Error();
+        overlay.classList.add('closing');
+        setTimeout(() => overlay.remove(), 220);
+        showToast(t('toastConfirmed'));
+        loadApartments();
+      } catch {
+        showToast(t('toastError'));
+        document.getElementById('btn-confirm-all').disabled = false;
+        document.getElementById('btn-confirm-all').textContent = t('confirmBtn');
+      }
+    });
+
+    // Abbrechen
+    document.getElementById('btn-confirm-cancel')?.addEventListener('click', () => {
+      overlay.classList.add('closing');
+      setTimeout(() => overlay.remove(), 220);
+    });
+  }
+
+  renderSheet();
+  document.body.appendChild(overlay);
+
+  // Tap außerhalb schließt Sheet
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) {
+      overlay.classList.add('closing');
+      setTimeout(() => overlay.remove(), 220);
+    }
+  });
+}
+
+async function confirmClean(btn) {
+  // Apartment-Daten aus der aktuellen Liste holen
+  const aptId = btn.dataset.id;
+  const apt = allApartments.find(a => String(a.id) === String(aptId));
+  const aptName = apt?.name || aptId;
+  openConfirmSheet(aptId, aptName, apt || {});
 }
 
 document.getElementById('btn-lang').addEventListener('click', () => {
