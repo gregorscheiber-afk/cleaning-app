@@ -443,87 +443,97 @@ async function loadHouses() {
 
 }
 
-// ── Apartments (gruppiert nach Haus) ─────────────────────
+// ── Apartments – Kachel-Ansicht ──────────────────────────
+let selectedHouseAdmin = null;
+let allAptsCache = [];
+
 async function loadApartments() {
-  const apts = await (await fetch('/api/apartments')).json();
+  allAptsCache = await (await fetch('/api/apartments')).json();
 
   // Stats berechnen
   const c = { muss_geputzt_werden:0, sauber:0, belegt:0 };
-  apts.forEach(a => { if(c[a.status]!==undefined) c[a.status]++; });
+  allAptsCache.forEach(a => { if(c[a.status]!==undefined) c[a.status]++; });
   document.getElementById('stat-putzen').textContent = c.muss_geputzt_werden;
   document.getElementById('stat-sauber').textContent = c.sauber;
   document.getElementById('stat-belegt').textContent = c.belegt;
 
-  const container = document.getElementById('apt-houses-container');
-  if (!apts.length) {
-    container.innerHTML = `<div style="color:var(--ink-muted);padding:1rem;font-size:.85rem">${t('noApts')}</div>`;
-    return;
+  if (selectedHouseAdmin) {
+    renderHouseApts(selectedHouseAdmin);
+  } else {
+    renderHouseTiles();
   }
+}
+
+function renderHouseTiles() {
+  const container = document.getElementById('apt-houses-container');
 
   // Häuser gruppieren
   const houseMap = new Map();
-  // Zuerst alle bekannten Häuser eintragen
-  allHouses.forEach(h => houseMap.set(h.id, { name: h.name, apts: [] }));
-  // Apartments ohne Haus
-  houseMap.set(0, { name: '–', apts: [] });
-
-  apts.forEach(apt => {
+  allHouses.forEach(h => houseMap.set(h.id, { ...h, apts: [] }));
+  allAptsCache.forEach(apt => {
     const hid = apt.house_id || 0;
-    if (!houseMap.has(hid)) houseMap.set(hid, { name: '–', apts: [] });
+    if (!houseMap.has(hid)) houseMap.set(hid, { id: hid, name: '–', apts: [] });
     houseMap.get(hid).apts.push(apt);
   });
-
   // Leere Häuser entfernen
-  for (const [hid, house] of houseMap) {
-    if (!house.apts.length) houseMap.delete(hid);
-  }
+  for (const [hid, h] of houseMap) { if (!h.apts.length) houseMap.delete(hid); }
 
-  // Vorherigen Zustand der Karten merken (auf/zu)
-  const prevStates = {};
-  container.querySelectorAll('.house-card').forEach(card => {
-    prevStates[card.dataset.houseId] = card.classList.contains('collapsed');
-  });
+  let html = '<div class="house-grid">';
+  houseMap.forEach((house) => {
+    const putzen  = house.apts.filter(a => a.status === 'muss_geputzt_werden').length;
+    const sauber  = house.apts.filter(a => a.status === 'sauber').length;
+    const belegt  = house.apts.filter(a => a.status === 'belegt').length;
+    const stats = [
+      putzen ? `<span class="house-tile-stat putzen">⚠ ${putzen} ${t('statusPutzen')}</span>` : '',
+      sauber ? `<span class="house-tile-stat sauber">✓ ${sauber} ${t('statusSauber')}</span>` : '',
+      belegt ? `<span class="house-tile-stat belegt">● ${belegt} ${t('statusBelegt')}</span>` : '',
+    ].filter(Boolean).join('');
 
-  // HTML bauen
-  let html = '';
-  houseMap.forEach((house, hid) => {
-    const wasCollapsed = prevStates[hid] === true;
     html += `
-      <div class="house-card${wasCollapsed ? ' collapsed' : ''}" data-house-id="${hid}">
-        <div class="house-card-header">
-          <div class="house-card-header-left">
-            <span class="house-card-title">${esc(house.name)}</span>
-            <span class="house-card-count">${house.apts.length}</span>
-          </div>
-          <span class="house-card-chevron">▼</span>
-        </div>
-        <div class="house-card-body" style="max-height:9999px">
-          <table class="apt-table" style="margin:0">
-            <tbody>
-              ${house.apts.map(apt => renderAptRow(apt)).join('')}
-            </tbody>
-          </table>
-        </div>
+      <div class="house-tile" data-house-tile="${house.id}">
+        <div class="house-tile-name">${esc(house.name)}</div>
+        <div class="house-tile-count">${house.apts.length} Apartment${house.apts.length !== 1 ? 's' : ''}</div>
+        <div class="house-tile-stats">${stats}</div>
+        <span class="house-tile-arrow">→</span>
       </div>`;
   });
+  html += '</div>';
+  container.innerHTML = html;
+
+  container.querySelectorAll('[data-house-tile]').forEach(tile => {
+    tile.addEventListener('click', () => {
+      selectedHouseAdmin = parseInt(tile.dataset.houseTile);
+      renderHouseApts(selectedHouseAdmin);
+    });
+  });
+}
+
+function renderHouseApts(houseId) {
+  const container = document.getElementById('apt-houses-container');
+  const house = allHouses.find(h => h.id === houseId) || { name: '–' };
+  const apts  = allAptsCache.filter(a => a.house_id === houseId);
+
+  let html = `
+    <div class="apt-back-bar">
+      <button class="btn-back-house" id="btn-back-to-houses">← ${t('panelHouses')}</button>
+      <span class="apt-back-house-name">${esc(house.name)}</span>
+    </div>`;
+
+  if (!apts.length) {
+    html += `<div style="padding:1.25rem;color:var(--ink-muted);font-size:.85rem">${t('noApts')}</div>`;
+  } else {
+    html += `<table class="apt-table" style="margin:0"><tbody>`;
+    apts.forEach(apt => { html += renderAptRow(apt); });
+    html += `</tbody></table>`;
+  }
 
   container.innerHTML = html;
 
-  // Auf/Zu Toggle
-  container.querySelectorAll('.house-card-header').forEach(header => {
-    header.addEventListener('click', () => {
-      const card = header.closest('.house-card');
-      const body = card.querySelector('.house-card-body');
-      card.classList.toggle('collapsed');
-      if (card.classList.contains('collapsed')) {
-        body.style.maxHeight = '0';
-      } else {
-        body.style.maxHeight = body.scrollHeight + 'px';
-      }
-    });
+  document.getElementById('btn-back-to-houses').addEventListener('click', () => {
+    selectedHouseAdmin = null;
+    renderHouseTiles();
   });
 
-  // Alle Handler anhängen
   apts.forEach(apt => attachNoteHandlers(apt));
 
   container.querySelectorAll('[data-del-booking]').forEach(btn => {
@@ -550,7 +560,6 @@ async function loadApartments() {
     });
   });
 
-  // Reinigungszeit-Inline-Edit
   container.querySelectorAll('[data-apt-time]').forEach(input => {
     input.addEventListener('change', async () => {
       const id = input.dataset.aptTime;
