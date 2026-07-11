@@ -3,7 +3,6 @@ const fromInput   = document.getElementById('from-date');
 const daysSelect  = document.getElementById('days-select');
 const btnToday    = document.getElementById('btn-today');
 const houseFilter = document.getElementById('house-filter');
-const planBadge   = document.getElementById('plan-title-badge');
 const badgeHeader = document.getElementById('plan-badge');
 
 // Plan-Typ aus URL ermitteln
@@ -16,7 +15,6 @@ const PLAN_LABELS = {
   mainstreet: 'Plan MAINSTREET',
 };
 
-planBadge.textContent  = PLAN_LABELS[planType] || 'Belegungsplan';
 badgeHeader.textContent = PLAN_LABELS[planType] || 'Belegungsplan';
 document.title = `MYALPS · ${PLAN_LABELS[planType] || 'Belegungsplan'}`;
 
@@ -166,6 +164,8 @@ function renderPlan(data, from, days) {
     </tr>`;
 
     house.apts.forEach(apt => {
+      // Notizen für dieses Apartment merken
+      const aptNotes = apt.notes || [];
       // Checkout-Tage bestimmen
       const checkoutDays = new Set(apt.bookings.map(b => b.end.substring(0,10)));
 
@@ -233,9 +233,11 @@ function renderPlan(data, from, days) {
         block.style.left  = `${leftOffset + 1}px`;
         block.style.width = `${Math.max(blockWidth, 10)}px`;
         block.title = `${b.guest_name||''} · ${b.persons||''} · ${bStart} → ${bEnd}`;
+        const noteText = aptNotes.map(n => '📋 ' + n).join('\n');
         block.innerHTML = `
           <span class="bk-guest">${esc(b.guest_name||'–')}</span>
-          ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}`;
+          ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}
+          ${aptNotes.length ? `<span class="bk-note-icon" data-tooltip="${esc(noteText)}">📋</span>` : ''}`;
         cell.appendChild(block);
       });
     });

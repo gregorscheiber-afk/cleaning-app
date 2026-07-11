@@ -563,9 +563,11 @@ function renderAptRow(apt) {
       <td colspan="5" style="padding:0">
         <table style="width:100%;border-collapse:collapse">
           <tr>
-            <td style="padding:.75rem 1.1rem;width:28%">
-              <div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div>
-              <div style="display:flex;align-items:center;gap:.4rem;margin-top:.3rem">
+            <td style="padding:0 1.1rem .75rem;width:28%;border-top:3px solid var(--accent)">
+              <div style="text-align:center;padding:.55rem 0 .3rem">
+                <div style="font-size:1.15rem;font-weight:700;color:var(--accent);letter-spacing:-.01em">${esc(apt.name)}</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:.25rem">
                 <span style="font-size:.68rem;color:var(--ink-muted)">⏰ ${t('cleanFrom')}:</span>
                 <input type="time" step="300" class="apt-time-inline" data-apt-time="${apt.id}"
                   value="${esc(apt.checkout_time||'09:30')}"
@@ -729,7 +731,12 @@ initLangScreen(async () => {
   await loadHouses();
   loadApartments();
   loadNotifications();
-  setInterval(loadApartments,    30000);
+  setInterval(() => {
+    // Nicht neu laden wenn gerade jemand in einem Eingabefeld schreibt
+    const active = document.activeElement;
+    const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+    if (!isTyping) loadApartments();
+  }, 30000);
   setInterval(loadNotifications,  8000);
   loadCleaningLog();
   initVerwaltungToggle();

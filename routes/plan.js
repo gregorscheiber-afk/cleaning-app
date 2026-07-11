@@ -53,6 +53,7 @@ router.get('/plan', async (req, res, next) => {
     const result = apartments.map(apt => ({
       ...apt,
       bookings: bookingsByApt[apt.id] || [],
+      notes: notesByApt[apt.id] || [],
     }));
 
     res.json({ from, to, days, plan, apartments: result, houses: allHouses });

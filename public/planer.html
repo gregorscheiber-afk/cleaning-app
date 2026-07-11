@@ -300,7 +300,6 @@ html, body { height: 100%; overflow: hidden; }
     <select id="house-filter" style="display:none">
       <option value="">Alle Häuser</option>
     </select>
-    <div class="plan-title-badge" id="plan-title-badge"></div>
   </div>
   <div id="cleaning-alert-container"></div>
   <div class="planer-scroll" id="planer-scroll">
@@ -312,3 +311,63 @@ html, body { height: 100%; overflow: hidden; }
 <script src="/planer.js"></script>
 </body>
 </html>
+<style>
+/* ── Notiz-Tooltip im Plan ── */
+.bk-note-icon {
+  flex-shrink: 0;
+  font-size: .7rem;
+  background: rgba(0,0,0,.25);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: .3rem;
+  cursor: help;
+  position: relative;
+}
+
+.bk-note-icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1e1a;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: .55rem .75rem;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: pre-line;
+  min-width: 160px;
+  max-width: 240px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+  line-height: 1.5;
+}
+
+.bk-note-icon::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--accent);
+  z-index: 101;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+
+.bk-note-icon:hover::after,
+.bk-note-icon:hover::before {
+  opacity: 1;
+}
+</style>
