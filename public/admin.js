@@ -597,7 +597,9 @@ async function loadNotifications() {
   const url = lastTs ? `/api/notifications?since=${encodeURIComponent(lastTs)}` : '/api/notifications';
   const items = await (await fetch(url)).json();
   if (items.length > 0) {
-    if (lastTs) { loadApartments(); loadHouses(); }
+    const active = document.activeElement;
+    const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+    if (lastTs && !isTyping) { loadApartments(); loadHouses(); }
     lastTs = items[0].created_at;
   }
   if (!lastTs) lastTs = new Date().toISOString();

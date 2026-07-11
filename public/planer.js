@@ -202,6 +202,7 @@ function renderPlan(data, from, days) {
   houseMap.forEach((house) => {
     const color = COLORS[ci++ % COLORS.length];
     house.apts.forEach(apt => {
+      const aptNotes = apt.notes || [];
       apt.bookings.forEach(b => {
         const bStart = b.start.substring(0,10);
         const bEnd   = b.end.substring(0,10);
