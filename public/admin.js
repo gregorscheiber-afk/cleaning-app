@@ -37,10 +37,6 @@ function applyLabels() {
   document.getElementById('apt-pms').placeholder             = t('pmsCodePlaceholder');
   document.getElementById('btn-add-house').textContent       = t('btnAdd');
   document.getElementById('btn-add-apt').textContent         = t('btnAdd');
-  document.getElementById('lbl-panel-manage-apts').textContent = 'Apartments verwalten';
-  document.getElementById('th-manage-name').textContent        = t('thName');
-  document.getElementById('th-manage-house').textContent       = t('thHouse');
-  document.getElementById('th-manage-time').textContent        = t('cleanFrom');
   document.getElementById('modal-lbl-name').textContent      = t('thName');
   document.getElementById('modal-lbl-pms').textContent       = t('pmsCode');
   document.getElementById('modal-lbl-house').textContent     = t('thHouse');
@@ -386,36 +382,20 @@ document.getElementById('btn-structure-start').addEventListener('click', async (
 });
 
 // ── Apartments Verwaltung (Bearbeiten/Löschen) ───────────
-async function loadManageApts() {
-  const apts = await (await fetch('/api/apartments')).json();
-  const houseMap = Object.fromEntries(allHouses.map(h => [h.id, h.name]));
-  const tbody = document.getElementById('manage-apt-tbody');
-  if (!apts.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = apts.map(apt => `
-    <tr>
-      <td><div style="font-size:.95rem;font-weight:700;color:var(--ink)">${esc(apt.name)}</div></td>
-      <td style="font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
-      <td style="font-size:.82rem;color:var(--ink-soft)">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</td>
-      <td style="white-space:nowrap;display:flex;gap:4px">
-        <button class="btn-edit" data-manage-edit="${apt.id}">${t('editApt')}</button>
-        <button class="btn-sync" data-manage-del="${apt.id}" style="color:var(--putzen)">${t('btnDelete')}</button>
-      </td>
-    </tr>`).join('');
+async function loadManageApts() { /* Apartments-verwalten Panel entfernt */ }
 
-  tbody.querySelectorAll('[data-manage-edit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const apt = apts.find(a => a.id == btn.dataset.manageEdit);
-      if (apt) openEditModal(apt);
-    });
-  });
-  tbody.querySelectorAll('[data-manage-del]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await fetch(`/api/apartments/${btn.dataset.manageDel}`, { method: 'DELETE' });
-      showToast(t('toastDeleted')); loadApartments(); loadManageApts(); loadHouses();
-    });
+// ── Verwaltung Toggle ────────────────────────────────────
+function initVerwaltungToggle() {
+  const btn      = document.getElementById('btn-verwaltung-toggle');
+  const panels   = document.getElementById('verwaltung-panels');
+  const chevron  = document.getElementById('verwaltung-chevron');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const open = panels.style.display === 'none';
+    panels.style.display = open ? 'block' : 'none';
+    chevron.style.transform = open ? 'rotate(180deg)' : '';
+    btn.style.borderColor = open ? 'var(--accent)' : 'var(--line)';
+    btn.style.color = open ? 'var(--accent)' : 'var(--ink-soft)';
   });
 }
 
@@ -752,4 +732,5 @@ initLangScreen(async () => {
   setInterval(loadApartments,    30000);
   setInterval(loadNotifications,  8000);
   loadCleaningLog();
+  initVerwaltungToggle();
 });

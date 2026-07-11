@@ -107,10 +107,11 @@ html, body { height: 100%; overflow: hidden; }
 .row-day th { top: 26px; height: 24px; background-color: #1e231e; }
 .row-date th { top: 50px; height: 26px; border-bottom: 2px solid var(--line); background-color: #1e231e; }
 
-/* ── Today/Weekend in Header ── */
+/* ── Heute in Header ── */
 .row-kw th.is-today, .row-day th.is-today, .row-date th.is-today {
-  background-color: rgba(200,150,58,.18) !important;
+  background-color: rgba(200,150,58,.25) !important;
   color: var(--accent) !important;
+  font-weight: 800 !important;
 }
 .row-kw th.is-weekend, .row-day th.is-weekend, .row-date th.is-weekend {
   background-color: #222722 !important;
@@ -199,7 +200,11 @@ html, body { height: 100%; overflow: hidden; }
   padding: 0;
 }
 
-.td-day.is-today    { background: rgba(200,150,58,.06); }
+.td-day.is-today {
+  background: rgba(200,150,58,.13) !important;
+  border-left: 1px solid rgba(200,150,58,.4) !important;
+  border-right: 1px solid rgba(200,150,58,.4) !important;
+}
 .td-day.is-weekend  { background: rgba(255,255,255,.015); }
 .td-day.is-checkout { background: rgba(217,107,60,.06); }
 

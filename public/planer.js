@@ -153,11 +153,16 @@ function renderPlan(data, from, days) {
     const color = COLORS[colorIdx++ % COLORS.length];
 
     // Haus-Trennzeile
+    // Haus-Trennzeile mit Heute-Highlight pro Zelle
+    const houseCells = dates.map(d => {
+      const isT = d === todayStr;
+      return `<td style="background:${isT ? 'rgba(200,150,58,.18)' : 'var(--surface-3)'};border-bottom:1px solid var(--line);${isT ? 'border-left:1px solid rgba(200,150,58,.4);border-right:1px solid rgba(200,150,58,.4);' : ''}height:28px"></td>`;
+    }).join('');
     html += `<tr class="tr-house">
       <td class="td-name" style="background:var(--surface-3);color:var(--accent);font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;height:28px">
         🏠 ${esc(house.name)}
       </td>
-      <td colspan="${days}" style="background:var(--surface-3);border-bottom:1px solid var(--line)"></td>
+      ${houseCells}
     </tr>`;
 
     house.apts.forEach(apt => {

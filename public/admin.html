@@ -74,70 +74,76 @@
     </div>
   </div>
 
-  <!-- Häuser -->
-  <div class="panel panel-mgmt">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
-    <div class="panel-body">
-      <table class="apt-table">
-        <thead><tr><th id="th-name-h"></th><th>Apartments</th><th></th></tr></thead>
-        <tbody id="houses-tbody"></tbody>
-      </table>
-    </div>
+
+  <!-- Verwaltung Toggle -->
+  <div style="padding:.5rem 0;text-align:center">
+    <button id="btn-verwaltung-toggle" style="
+      background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);
+      color:var(--ink-soft);font-size:.8rem;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase;padding:.6rem 1.5rem;cursor:pointer;
+      transition:all .18s;display:inline-flex;align-items:center;gap:.5rem">
+      ⚙ Verwaltung <span id="verwaltung-chevron" style="font-size:.65rem;transition:transform .2s">▼</span>
+    </button>
   </div>
 
-  <!-- Häuser & Apartments importieren -->
-  <div class="panel panel-mgmt">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
-    <div class="panel-body" style="padding:1.1rem">
-      <p class="import-hint" id="lbl-import-structure-hint"></p>
-      <div style="display:flex;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
-        <button class="btn-secondary" id="btn-download-template" style="font-size:.8rem"></button>
-        <label class="import-file-label" for="structure-file-input" id="lbl-structure-btn"></label>
-        <input type="file" id="structure-file-input" accept=".xlsx,.xls" style="display:none"/>
-        <span class="import-filename" id="structure-filename">–</span>
+  <!-- Verwaltungs-Panels (versteckt) -->
+  <div id="verwaltung-panels" style="display:none">
+
+    <!-- Häuser -->
+    <div class="panel panel-mgmt">
+      <div class="panel-header"><span class="panel-title" id="lbl-panel-houses"></span></div>
+      <div class="panel-body">
+        <table class="apt-table">
+          <thead><tr><th id="th-name-h"></th><th>Apartments</th><th></th></tr></thead>
+          <tbody id="houses-tbody"></tbody>
+        </table>
       </div>
-      <div id="structure-preview"></div>
-      <button class="btn-primary" id="btn-structure-start" style="display:none"></button>
-      <div id="structure-result"></div>
     </div>
-  </div>
 
-  <!-- Apartments verwalten -->
-  <div class="panel panel-mgmt">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-manage-apts"></span></div>
-    <div class="panel-body">
-      <table class="apt-table">
-        <thead><tr><th id="th-manage-name"></th><th id="th-manage-house"></th><th id="th-manage-time"></th><th></th></tr></thead>
-        <tbody id="manage-apt-tbody"></tbody>
-      </table>
+    <!-- Häuser & Apartments importieren -->
+    <div class="panel panel-mgmt">
+      <div class="panel-header"><span class="panel-title" id="lbl-panel-import-structure"></span></div>
+      <div class="panel-body" style="padding:1.1rem">
+        <p class="import-hint" id="lbl-import-structure-hint"></p>
+        <div style="display:flex;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
+          <button class="btn-secondary" id="btn-download-template" style="font-size:.8rem"></button>
+          <label class="import-file-label" for="structure-file-input" id="lbl-structure-btn"></label>
+          <input type="file" id="structure-file-input" accept=".xlsx,.xls" style="display:none"/>
+          <span class="import-filename" id="structure-filename">–</span>
+        </div>
+        <div id="structure-preview"></div>
+        <button class="btn-primary" id="btn-structure-start" style="display:none"></button>
+        <div id="structure-result"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Haus hinzufügen -->
-  <div class="panel panel-mgmt">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-add-house"></span></div>
-    <div class="panel-body">
-      <form id="add-house-form" class="add-form">
-        <input id="house-name" type="text" required/>
-        <button type="submit" class="btn-primary" id="btn-add-house"></button>
-        <div class="form-error" id="house-form-error"></div>
-      </form>
+    <!-- Haus hinzufügen -->
+    <div class="panel panel-mgmt">
+      <div class="panel-header"><span class="panel-title" id="lbl-panel-add-house"></span></div>
+      <div class="panel-body">
+        <form id="add-house-form" class="add-form">
+          <input id="house-name" type="text" required/>
+          <button type="submit" class="btn-primary" id="btn-add-house"></button>
+          <div class="form-error" id="house-form-error"></div>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <!-- Apartment hinzufügen -->
-  <div class="panel panel-mgmt">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-add-apt"></span></div>
-    <div class="panel-body">
-      <form id="add-apt-form" class="add-form">
-        <input id="apt-name" type="text" required/>
-        <input id="apt-pms" type="text"/>
-        <select id="apt-house" style="background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:.65rem .8rem;font-size:.9rem;width:100%;"></select>
-        <button type="submit" class="btn-primary" id="btn-add-apt"></button>
-        <div class="form-error" id="apt-form-error"></div>
-      </form>
+    <!-- Apartment hinzufügen -->
+    <div class="panel panel-mgmt">
+      <div class="panel-header"><span class="panel-title" id="lbl-panel-add-apt"></span></div>
+      <div class="panel-body">
+        <form id="add-apt-form" class="add-form">
+          <input id="apt-name" type="text" required/>
+          <input id="apt-pms" type="text"/>
+          <select id="apt-house" style="background:var(--surface-3);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:.65rem .8rem;font-size:.9rem;width:100%;"></select>
+          <button type="submit" class="btn-primary" id="btn-add-apt"></button>
+          <div class="form-error" id="apt-form-error"></div>
+        </form>
+      </div>
     </div>
-  </div>
+
+  </div><!-- /verwaltung-panels -->
 </main>
 
   <!-- Reinigungslog -->
