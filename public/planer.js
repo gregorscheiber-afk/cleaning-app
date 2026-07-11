@@ -203,9 +203,17 @@ function renderPlan(data, from, days) {
     const color = COLORS[ci++ % COLORS.length];
     house.apts.forEach(apt => {
       const aptNotes = apt.notes || [];
+      // Notiz gilt nur für die nächste kommende Buchung (erste Buchung ab heute)
+      const todayISO = new Date().toISOString().substring(0,10);
+      const nextBooking = apt.bookings
+        .filter(b => b.start.substring(0,10) >= todayISO)
+        .sort((a,b) => a.start.localeCompare(b.start))[0];
+      const nextBookingId = nextBooking ? nextBooking.id : null;
+
       apt.bookings.forEach(b => {
         const bStart = b.start.substring(0,10);
         const bEnd   = b.end.substring(0,10);
+        const isNextBooking = nextBookingId && b.id === nextBookingId;
 
         // Sichtbarer Startindex
         const si = dateIdx[bStart] !== undefined ? dateIdx[bStart] : dates.findIndex(d => d >= bStart);
@@ -234,12 +242,31 @@ function renderPlan(data, from, days) {
         block.style.left  = `${leftOffset + 1}px`;
         block.style.width = `${Math.max(blockWidth, 10)}px`;
         block.title = `${b.guest_name||''} · ${b.persons||''} · ${bStart} → ${bEnd}`;
-        const noteText = aptNotes.map(n => '📋 ' + n).join('\n');
+        const showNote = isNextBooking && aptNotes.length > 0;
+        const noteText = aptNotes.map(n => '• ' + n).join('\n');
         block.innerHTML = `
           <span class="bk-guest">${esc(b.guest_name||'–')}</span>
           ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}
-          ${aptNotes.length ? `<span class="bk-note-icon" data-tooltip="${esc(noteText)}">📋</span>` : ''}`;
+          ${showNote ? `<span class="bk-note-icon">ℹ</span>` : ''}`;
         cell.appendChild(block);
+
+        // Tooltip per JS an den Body hängen (damit er nicht abgeschnitten wird)
+        if (showNote) {
+          const icon = block.querySelector('.bk-note-icon');
+          icon.addEventListener('mouseenter', () => {
+            const tip = document.createElement('div');
+            tip.className = 'note-tooltip-float';
+            tip.textContent = noteText;
+            document.body.appendChild(tip);
+            const r = icon.getBoundingClientRect();
+            tip.style.left = (r.left + r.width/2) + 'px';
+            tip.style.top  = (r.top - 8) + 'px';
+            icon._tip = tip;
+          });
+          icon.addEventListener('mouseleave', () => {
+            if (icon._tip) { icon._tip.remove(); icon._tip = null; }
+          });
+        }
       });
     });
   });
