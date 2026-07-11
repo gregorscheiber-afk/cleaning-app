@@ -10,21 +10,18 @@ router.get('/plan', async (req, res, next) => {
     const from    = req.query.from || new Date().toISOString().substring(0, 10);
     const to      = new Date(new Date(from).getTime() + days * 86400000).toISOString().substring(0, 10);
     const houseId = req.query.house_id || null;
-    const plan    = req.query.plan || 'wiwa'; // wiwa=alle, mainstreet=gefiltert
+    const plan    = req.query.plan || 'wiwa';
 
     // Häuser laden
-    let houseSql = `SELECT * FROM houses ORDER BY name`;
-    const { rows: allHouses } = await pool.query(houseSql);
+    const { rows: allHouses } = await pool.query(`SELECT * FROM houses ORDER BY name`);
 
     // Apartments mit Hausinfo
     let aptSql = `SELECT a.*, h.name as house_name FROM apartments a LEFT JOIN houses h ON h.id=a.house_id WHERE 1=1`;
     const aptParams = [];
 
     if (plan === 'mainstreet') {
-      // Nur Chalet White Pearl + Chalet Cecilia
       aptSql += ` AND (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
     } else if (plan === 'wiwa') {
-      // WIWA = alle AUSSER White Pearl und Cecilia
       aptSql += ` AND NOT (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
       if (houseId) { aptParams.push(houseId); aptSql += ` AND a.house_id=$${aptParams.length}`; }
     } else if (houseId) {
@@ -35,8 +32,9 @@ router.get('/plan', async (req, res, next) => {
     aptSql += ` ORDER BY h.name, a.name`;
     const { rows: apartments } = await pool.query(aptSql, aptParams);
 
-    // Buchungen im Zeitraum
     const ids = apartments.map(a => a.id);
+
+    // Buchungen im Zeitraum
     let bookings = [];
     if (ids.length) {
       const ph = ids.map((_,i) => `$${i+1}`).join(',');
@@ -47,13 +45,24 @@ router.get('/plan', async (req, res, next) => {
       bookings = rows;
     }
 
+    // Notizen pro Apartment
+    let notesByApt = {};
+    if (ids.length) {
+      const nph = ids.map((_,i) => `$${i+1}`).join(',');
+      const { rows: notes } = await pool.query(
+        `SELECT apartment_id, message FROM apartment_notes WHERE apartment_id IN (${nph}) ORDER BY created_at ASC`,
+        ids
+      );
+      notes.forEach(n => { (notesByApt[n.apartment_id] ??= []).push(n.message); });
+    }
+
     const bookingsByApt = {};
     bookings.forEach(b => { (bookingsByApt[b.apartment_id] ??= []).push(b); });
 
     const result = apartments.map(apt => ({
       ...apt,
       bookings: bookingsByApt[apt.id] || [],
-      notes: notesByApt[apt.id] || [],
+      notes:    notesByApt[apt.id]    || [],
     }));
 
     res.json({ from, to, days, plan, apartments: result, houses: allHouses });
