@@ -1674,3 +1674,68 @@ main {
   cursor: pointer;
   padding: .4rem;
 }
+
+/* ── Haus-Karten in Admin ── */
+.house-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: .75rem;
+  overflow: hidden;
+}
+
+.house-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .14s;
+  background: var(--surface-2);
+}
+
+.house-card-header:hover { background: var(--surface-3); }
+
+.house-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.house-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+
+.house-card-count {
+  font-size: .72rem;
+  font-weight: 700;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: .18rem .6rem;
+}
+
+.house-card-chevron {
+  font-size: .75rem;
+  color: var(--ink-muted);
+  transition: transform .2s ease;
+}
+
+.house-card.collapsed .house-card-chevron {
+  transform: rotate(-90deg);
+}
+
+.house-card-body {
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+  transition: max-height .25s ease;
+}
+
+.house-card.collapsed .house-card-body {
+  max-height: 0 !important;
+  border-top: none;
+}
