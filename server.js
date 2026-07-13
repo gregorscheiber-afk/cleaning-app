@@ -55,7 +55,7 @@ initDb()
     // Status aller Apartments beim Start neu berechnen
     recomputeAll().catch(err => console.error('recomputeAll fehlgeschlagen:', err.message));
     // Stündlich Status neu berechnen (für automatischen Wechsel zur Reinigungszeit)
-    cron.schedule('*/15 * * * *', () => {
+    cron.schedule('*/5 * * * *', () => {
       recomputeAll().catch(err => console.error('recomputeAll fehlgeschlagen:', err.message));
     });
   })

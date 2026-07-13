@@ -10,24 +10,22 @@ async function recomputeStatus(apartmentId) {
   const { rows: aptRows } = await pool.query(
     `SELECT checkout_time FROM apartments WHERE id=$1`, [apartmentId]
   );
-  const checkoutTime = aptRows[0]?.checkout_time || '09:30';
+  // checkout_time (z.B. 09:30) ist nur die ANGEZEIGTE Reinigungszeit für die Putzdamen.
+  // Der Status wechselt intern aber schon früh morgens um 02:00 Uhr auf "zu reinigen".
+  const checkoutTime = '02:00';
+  // Check-in-Zeit: ab wann eine neue Buchung als "belegt" gilt (Gast reist nachmittags an)
+  const CHECKIN_TIME = '16:00';
 
-  // Aktuell belegt?
-  const { rows: current } = await pool.query(
-    `SELECT id FROM bookings WHERE apartment_id=$1 AND start<=$2 AND "end">$2 LIMIT 1`,
-    [apartmentId, nowIso]
-  );
+  // Wiener Zeit bestimmen
+  const viennaNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Vienna' }));
+  const today       = viennaNow.getFullYear() + '-' +
+                      String(viennaNow.getMonth()+1).padStart(2,'0') + '-' +
+                      String(viennaNow.getDate()).padStart(2,'0');
+  const currentTime = String(viennaNow.getHours()).padStart(2,'0') + ':' +
+                      String(viennaNow.getMinutes()).padStart(2,'0');
 
-  if (current.length) {
-    await pool.query(`UPDATE apartments SET status='belegt', checkout_time='09:30' WHERE id=$1`, [apartmentId]);
-    return 'belegt';
-  }
-
-  // Letzter Checkout – erst nach Reinigungszeit gültig
-  const today       = now.toISOString().substring(0, 10);
-  const currentTime = now.toTimeString().substring(0, 5);
-
-  const { rows: lastCO } = await pool.query(`
+  // Gibt es heute einen Checkout der noch nicht gereinigt wurde? → hat VORRANG vor neuer Buchung
+  const { rows: todayCheckout } = await pool.query(`
     SELECT "end" FROM bookings
     WHERE apartment_id=$1
     AND (
@@ -37,25 +35,42 @@ async function recomputeStatus(apartmentId) {
     ORDER BY "end" DESC LIMIT 1
   `, [apartmentId, today, currentTime, checkoutTime]);
 
-  if (!lastCO.length) {
-    await pool.query(`UPDATE apartments SET status='sauber', last_checkout=NULL WHERE id=$1`, [apartmentId]);
-    return 'sauber';
+  if (todayCheckout.length) {
+    // Prüfen ob nach diesem Checkout schon gereinigt wurde
+    const { rows: lastClean } = await pool.query(
+      `SELECT confirmed_at FROM cleanings WHERE apartment_id=$1 ORDER BY confirmed_at DESC LIMIT 1`,
+      [apartmentId]
+    );
+    const cleaned = lastClean.length &&
+      new Date(lastClean[0].confirmed_at) >= new Date(todayCheckout[0].end);
+
+    if (!cleaned) {
+      // Muss gereinigt werden – auch wenn heute schon ein neuer Gast anreist!
+      await pool.query(
+        `UPDATE apartments SET status='muss_geputzt_werden', last_checkout=$1, checkout_time='09:30' WHERE id=$2`,
+        [todayCheckout[0].end, apartmentId]
+      );
+      return 'muss_geputzt_werden';
+    }
   }
 
-  const { rows: lastClean } = await pool.query(
-    `SELECT confirmed_at FROM cleanings WHERE apartment_id=$1 ORDER BY confirmed_at DESC LIMIT 1`,
-    [apartmentId]
-  );
+  // Aktuell belegt? (Buchung die heute startet erst ab Check-in-Zeit)
+  const { rows: current } = await pool.query(`
+    SELECT id, LEFT(start,10) as sd FROM bookings
+    WHERE apartment_id=$1 AND start<=$2 AND "end">$2 LIMIT 1
+  `, [apartmentId, nowIso]);
 
-  const cleaned = lastClean.length &&
-    new Date(lastClean[0].confirmed_at) >= new Date(lastCO[0].end);
-
-  const status = cleaned ? 'sauber' : 'muss_geputzt_werden';
-  await pool.query(
-    `UPDATE apartments SET status=$1, last_checkout=$2 WHERE id=$3`,
-    [status, lastCO[0].end, apartmentId]
-  );
-  return status;
+  if (current.length) {
+    // Wenn die Buchung heute erst startet, ist sie erst ab Check-in-Zeit "belegt"
+    const startsToday = current[0].sd === today;
+    if (!startsToday || currentTime >= CHECKIN_TIME) {
+      await pool.query(`UPDATE apartments SET status='belegt', checkout_time='09:30' WHERE id=$1`, [apartmentId]);
+      return 'belegt';
+    }
+    // startet heute, aber vor Check-in-Zeit → gilt noch als sauber (bereit für Anreise)
+    await pool.query(`UPDATE apartments SET status='sauber' WHERE id=$1`, [apartmentId]);
+    return 'sauber';
+  }
 }
 
 // Alle Apartments neu berechnen (z.B. beim Serverstart)
