@@ -241,7 +241,8 @@ function renderPlan(data, from, days) {
         block.className = `bk ${color}`;
         block.style.left  = `${leftOffset + 1}px`;
         block.style.width = `${Math.max(blockWidth, 10)}px`;
-        block.title = `${b.guest_name||''} · ${b.persons||''} · ${bStart} → ${bEnd}`;
+        const fmtDE = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.${y}`; };
+        block.title = `${b.guest_name||''} · ${b.persons||''} · ${fmtDE(bStart)} → ${fmtDE(bEnd)}`;
         const showNote = isNextBooking && aptNotes.length > 0;
         const noteText = aptNotes.map(n => '• ' + n).join('\n');
         block.innerHTML = `
@@ -251,20 +252,43 @@ function renderPlan(data, from, days) {
         cell.appendChild(block);
 
         // Tooltip per JS an den Body hängen (damit er nicht abgeschnitten wird)
+        // Funktioniert per Hover (Desktop) UND per Tippen (Handy)
         if (showNote) {
           const icon = block.querySelector('.bk-note-icon');
-          icon.addEventListener('mouseenter', () => {
+
+          const showTip = () => {
+            if (icon._tip) return;
             const tip = document.createElement('div');
             tip.className = 'note-tooltip-float';
             tip.textContent = noteText;
             document.body.appendChild(tip);
             const r = icon.getBoundingClientRect();
-            tip.style.left = (r.left + r.width/2) + 'px';
+            let left = r.left + r.width/2;
+            // Am Bildschirmrand nicht abschneiden
+            const tipW = Math.min(260, window.innerWidth - 20);
+            if (left - tipW/2 < 10) left = tipW/2 + 10;
+            if (left + tipW/2 > window.innerWidth - 10) left = window.innerWidth - tipW/2 - 10;
+            tip.style.left = left + 'px';
             tip.style.top  = (r.top - 8) + 'px';
             icon._tip = tip;
-          });
-          icon.addEventListener('mouseleave', () => {
+          };
+          const hideTip = () => {
             if (icon._tip) { icon._tip.remove(); icon._tip = null; }
+          };
+
+          // Desktop
+          icon.addEventListener('mouseenter', showTip);
+          icon.addEventListener('mouseleave', hideTip);
+
+          // Handy: Antippen öffnet/schließt
+          icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (icon._tip) { hideTip(); } else {
+              // andere offene Tooltips schließen
+              document.querySelectorAll('.note-tooltip-float').forEach(t => t.remove());
+              document.querySelectorAll('.bk-note-icon').forEach(i => i._tip = null);
+              showTip();
+            }
           });
         }
       });
@@ -317,4 +341,12 @@ initLangScreen(() => {
   loadPlan();
   checkCleaningAlert();
   setInterval(checkCleaningAlert, 5 * 60 * 1000); // alle 5 Min prüfen
+});
+
+// Tippen außerhalb eines Info-Zeichens schließt offene Notiz-Tooltips (Handy)
+document.addEventListener('click', (e) => {
+  if (!e.target.classList || !e.target.classList.contains('bk-note-icon')) {
+    document.querySelectorAll('.note-tooltip-float').forEach(t => t.remove());
+    document.querySelectorAll('.bk-note-icon').forEach(i => i._tip = null);
+  }
 });

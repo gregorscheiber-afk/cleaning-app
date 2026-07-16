@@ -617,7 +617,7 @@ function renderAptRow(apt) {
               </div>
             </td>
             <td style="padding:.75rem .5rem;width:18%"><span class="badge ${apt.status}">${statusLabel(apt.status)}</span></td>
-            <td style="padding:.75rem .5rem;width:18%;font-size:.82rem">${fmtDateTime(apt.last_checkout)}</td>
+            <td style="padding:.75rem .5rem;width:18%"></td>
             <td style="padding:.75rem 1.1rem"></td>
           </tr>
           <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
