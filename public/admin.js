@@ -382,7 +382,32 @@ document.getElementById('btn-structure-start').addEventListener('click', async (
 });
 
 // ── Apartments Verwaltung (Bearbeiten/Löschen) ───────────
-async function loadManageApts() { /* Apartments-verwalten Panel entfernt */ }
+async function loadManageApts() {
+  const tbody = document.getElementById('manage-apt-tbody');
+  if (!tbody) return;
+  const apts = await (await fetch('/api/apartments')).json();
+  const houseMap = Object.fromEntries(allHouses.map(h => [h.id, h.name]));
+
+  if (!apts.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--ink-muted);padding:1.1rem">${t('noApts')}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = apts.map(apt => `
+    <tr>
+      <td style="font-weight:700;color:var(--ink)">${esc(apt.name)}</td>
+      <td style="font-size:.82rem;color:var(--ink-soft)">${esc(houseMap[apt.house_id]||'–')}</td>
+      <td style="font-size:.82rem;color:var(--accent)">${esc(apt.pms_code||'–')}</td>
+      <td style="text-align:right"><button class="btn-edit" data-manage-edit="${apt.id}">${t('editApt')}</button></td>
+    </tr>`).join('');
+
+  tbody.querySelectorAll('[data-manage-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const apt = apts.find(a => String(a.id) === btn.dataset.manageEdit);
+      if (apt) openEditModal(apt);
+    });
+  });
+}
 
 // ── Verwaltung Toggle ────────────────────────────────────
 function initVerwaltungToggle() {
@@ -396,6 +421,7 @@ function initVerwaltungToggle() {
     chevron.style.transform = open ? 'rotate(180deg)' : '';
     btn.style.borderColor = open ? 'var(--accent)' : 'var(--line)';
     btn.style.color = open ? 'var(--accent)' : 'var(--ink-soft)';
+    if (open) loadManageApts();
   });
 }
 
