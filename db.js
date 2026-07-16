@@ -63,6 +63,11 @@ async function initDb() {
       created_at   TIMESTAMPTZ DEFAULT NOW(),
       read         INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS app_meta (
+      key   TEXT PRIMARY KEY,
+      value TEXT
+    );
   `);
 
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);

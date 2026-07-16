@@ -410,6 +410,22 @@ async function loadManageApts() {
 }
 
 // ── Verwaltung Toggle ────────────────────────────────────
+async function loadLastImport() {
+  const el = document.getElementById('last-import-time');
+  if (!el) return;
+  try {
+    const { last_auto_import } = await (await fetch('/api/last-import')).json();
+    if (last_auto_import) {
+      el.textContent = new Date(last_auto_import).toLocaleString('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      }) + ' Uhr';
+    } else {
+      el.textContent = 'noch kein automatischer Import';
+    }
+  } catch { el.textContent = '–'; }
+}
+
 function initVerwaltungToggle() {
   const btn      = document.getElementById('btn-verwaltung-toggle');
   const panels   = document.getElementById('verwaltung-panels');
@@ -421,7 +437,7 @@ function initVerwaltungToggle() {
     chevron.style.transform = open ? 'rotate(180deg)' : '';
     btn.style.borderColor = open ? 'var(--accent)' : 'var(--line)';
     btn.style.color = open ? 'var(--accent)' : 'var(--ink-soft)';
-    if (open) loadManageApts();
+    if (open) { loadManageApts(); loadLastImport(); }
   });
 }
 

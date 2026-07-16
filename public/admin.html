@@ -48,22 +48,6 @@
     <div class="panel-body"><div id="notifications" class="notif-list"></div></div>
   </div>
 
-  <!-- Belegungsplan importieren -->
-  <div class="panel">
-    <div class="panel-header"><span class="panel-title" id="lbl-panel-import"></span></div>
-    <div class="panel-body" style="padding:1.1rem">
-      <p class="import-hint" id="lbl-import-hint"></p>
-      <div class="import-file-row">
-        <label class="import-file-label" for="excel-file-input" id="lbl-import-btn"></label>
-        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none"/>
-        <span class="import-filename" id="import-filename">–</span>
-      </div>
-      <div id="import-preview"></div>
-      <button class="btn-primary" id="btn-import-start" style="display:none"></button>
-      <div id="import-result"></div>
-    </div>
-  </div>
-
   <!-- Apartments -->
   <div class="panel">
     <div class="panel-header">
@@ -88,6 +72,25 @@
 
   <!-- Verwaltungs-Panels (versteckt) -->
   <div id="verwaltung-panels" style="display:none">
+
+    <!-- Belegungsplan importieren (Excel) -->
+    <div class="panel panel-mgmt">
+      <div class="panel-header"><span class="panel-title" id="lbl-panel-import"></span></div>
+      <div class="panel-body" style="padding:1.1rem">
+        <div id="last-import-info" style="font-size:.78rem;color:var(--ink-soft);margin-bottom:.75rem;padding:.6rem .8rem;background:var(--surface-3);border-radius:8px;border:1px solid var(--line)">
+          🔄 Letzter automatischer Import: <span id="last-import-time" style="color:var(--accent);font-weight:600">–</span>
+        </div>
+        <p class="import-hint" id="lbl-import-hint"></p>
+        <div class="import-file-row">
+          <label class="import-file-label" for="excel-file-input" id="lbl-import-btn"></label>
+          <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none"/>
+          <span class="import-filename" id="import-filename">–</span>
+        </div>
+        <div id="import-preview"></div>
+        <button class="btn-primary" id="btn-import-start" style="display:none"></button>
+        <div id="import-result"></div>
+      </div>
+    </div>
 
     <!-- Apartments verwalten (bearbeiten) -->
     <div class="panel panel-mgmt">

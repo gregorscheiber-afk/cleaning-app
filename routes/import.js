@@ -310,8 +310,14 @@ router.post('/auto-import', upload.single('file'), async (req, res, next) => {
 
     // Import im Hintergrund ausführen (nach der Antwort)
     importBookingRows(importRows)
-      .then(result => {
+      .then(async result => {
         console.log(`Auto-Import fertig: ${result.created} importiert, ${result.skipped} übersprungen.`);
+        // Zeitpunkt des letzten automatischen Imports speichern
+        await pool.query(
+          `INSERT INTO app_meta (key, value) VALUES ('last_auto_import', $1)
+           ON CONFLICT (key) DO UPDATE SET value=$1`,
+          [new Date().toISOString()]
+        ).catch(e => console.error('last_auto_import speichern fehlgeschlagen:', e.message));
       })
       .catch(err => {
         console.error('Auto-Import Hintergrund-Fehler:', err.message);
@@ -320,6 +326,14 @@ router.post('/auto-import', upload.single('file'), async (req, res, next) => {
     console.error('Auto-Import Fehler:', e.message);
     if (!res.headersSent) next(e);
   }
+});
+
+// GET /api/last-import – Zeitpunkt des letzten automatischen Imports
+router.get('/last-import', async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query(`SELECT value FROM app_meta WHERE key='last_auto_import'`);
+    res.json({ last_auto_import: rows[0]?.value || null });
+  } catch(e) { next(e); }
 });
 
 module.exports = router;
