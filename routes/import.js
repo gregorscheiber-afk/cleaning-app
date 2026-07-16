@@ -304,12 +304,21 @@ router.post('/auto-import', upload.single('file'), async (req, res, next) => {
       return res.status(400).json({ error: 'Keine gültigen Buchungszeilen in der Excel gefunden' });
     }
 
-    const result = await importBookingRows(importRows);
-    console.log(`Auto-Import: ${result.created} Buchungen importiert, ${result.skipped} übersprungen.`);
-    res.json({ ok: true, ...result });
+    // SOFORT antworten, damit Make.com keinen Timeout bekommt.
+    // Der eigentliche Import läuft danach im Hintergrund weiter.
+    res.json({ ok: true, received: importRows.length, message: 'Import gestartet' });
+
+    // Import im Hintergrund ausführen (nach der Antwort)
+    importBookingRows(importRows)
+      .then(result => {
+        console.log(`Auto-Import fertig: ${result.created} importiert, ${result.skipped} übersprungen.`);
+      })
+      .catch(err => {
+        console.error('Auto-Import Hintergrund-Fehler:', err.message);
+      });
   } catch(e) {
     console.error('Auto-Import Fehler:', e.message);
-    next(e);
+    if (!res.headersSent) next(e);
   }
 });
 
