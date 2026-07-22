@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>MYALPS · Reinigung</title>
+<link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="topbar-logo" href="/">
+    <svg class="logo-mark" viewBox="0 0 40 32" fill="none">
+      <path d="M0 30 L8 14 L13 21 L20 6 L27 21 L32 14 L40 30 Z" fill="#c8963a"/>
+    </svg>
+    <div>
+      <span class="logo-name">MYALPS</span>
+      <span class="logo-sub">Homes · Ötztal</span>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <span class="page-role-badge" id="lbl-role"></span>
+    <button class="nav-pill" id="btn-lang" title="Sprache wählen">🌐</button>
+  </div>
+</header>
+
+<main>
+  <svg class="mountain-divider" viewBox="0 0 680 32" preserveAspectRatio="none">
+    <path d="M0 32 L60 8 L110 20 L180 2 L250 18 L320 5 L390 19 L460 7 L530 22 L600 4 L680 32 Z" fill="#c8963a"/>
+  </svg>
+  <div class="section-label" id="lbl-section"></div>
+  <div id="list" class="card-list"></div>
+</main>
+
+<div id="toast" class="toast"></div>
+<script src="/i18n.js"></script>
+<script src="/cleaner.js"></script>
+</body>
+</html>

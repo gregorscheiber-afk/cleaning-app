@@ -1,0 +1,1874 @@
+/* ======================================================
+   MYALPS Cleaning App — Design System
+   CI: myalps.at — dunkel, alpin, Premium
+   ====================================================== */
+
+:root {
+  --bg:           #111512;
+  --surface:      #1a1e1a;
+  --surface-2:    #222722;
+  --surface-3:    #2a302a;
+  --ink:          #f0ede8;
+  --ink-soft:     #8a9488;
+  --ink-muted:    #5a6358;
+  --line:         #2c322c;
+  --accent:       #c8963a;
+  --accent-hover: #daa84e;
+  --accent-dim:   rgba(200, 150, 58, 0.15);
+
+  --belegt:       #4a8fd4;
+  --belegt-bg:    rgba(74, 143, 212, 0.12);
+  --putzen:       #d96b3c;
+  --putzen-bg:    rgba(217, 107, 60, 0.12);
+  --sauber:       #4caf7d;
+  --sauber-bg:    rgba(76, 175, 125, 0.12);
+
+  --radius:       12px;
+  --radius-sm:    8px;
+  --shadow:       0 4px 24px rgba(0,0,0,.45);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.3);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica Neue, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+
+/* ── Topbar ── */
+header.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 0 1.25rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  gap: 1rem;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  text-decoration: none;
+}
+
+.topbar-logo .logo-mark {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.topbar-logo .logo-name {
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.topbar-logo .logo-sub {
+  font-size: .6rem;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  display: block;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.nav-pill {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .35rem .8rem;
+  transition: color .15s, border-color .15s;
+}
+
+.nav-pill:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+.page-role-badge {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 999px;
+  padding: .3rem .7rem;
+}
+
+/* ── Main layout ── */
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem 1.1rem 4rem;
+}
+
+/* ── Section heading ── */
+.section-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: .75rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Name bar (Putzfrau) ── */
+.name-bar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.name-bar label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.name-bar input {
+  flex: 1;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .55rem .75rem;
+  font-size: .95rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s;
+}
+
+.name-bar input:focus { border-color: var(--accent); }
+.name-bar input::placeholder { color: var(--ink-muted); }
+
+/* ── Hero empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 3.5rem 1rem;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: .75rem;
+  opacity: .6;
+}
+
+.empty-state p {
+  color: var(--ink-soft);
+  font-size: .9rem;
+}
+
+/* ── Apartment cards (Putzfrau) ── */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.apt-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.1rem 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: border-color .15s;
+}
+
+.apt-card:hover { border-color: var(--surface-3); }
+
+.apt-card-left { flex: 1; min-width: 0; }
+
+.apt-name {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: .2rem;
+}
+
+.apt-meta {
+  font-size: .75rem;
+  color: var(--ink-soft);
+}
+
+.apt-meta span {
+  color: var(--putzen);
+  font-weight: 600;
+}
+
+/* ── Confirm button ── */
+.btn-confirm {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: .8rem 1.1rem;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s, transform .08s;
+  flex-shrink: 0;
+}
+
+.btn-confirm:hover { background: var(--accent-hover); }
+.btn-confirm:active { transform: scale(.97); }
+.btn-confirm:disabled { opacity: .45; cursor: default; }
+
+/* ── Status badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .25rem .6rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.badge.belegt { background: var(--belegt-bg); color: var(--belegt); }
+.badge.muss_geputzt_werden { background: var(--putzen-bg); color: var(--putzen); }
+.badge.sauber { background: var(--sauber-bg); color: var(--sauber); }
+
+/* ── Admin: summary stats ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: .3rem;
+}
+
+.stat-card.c-putzen .stat-number { color: var(--putzen); }
+.stat-card.c-sauber  .stat-number { color: var(--sauber); }
+.stat-card.c-belegt  .stat-number { color: var(--belegt); }
+
+.stat-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ── Admin: panel wrapper ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: .85rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.panel-title {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.panel-body { padding: 0; }
+
+/* ── Admin: apartment table ── */
+.apt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.apt-table th, .apt-table td {
+  text-align: left;
+  padding: .75rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  font-size: .85rem;
+}
+
+.apt-table th {
+  color: var(--ink-muted);
+  font-weight: 700;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+}
+
+.apt-table tr:last-child td { border-bottom: none; }
+.apt-table tr:hover td { background: var(--surface-2); }
+
+.apt-table td .apt-name-cell { font-weight: 600; }
+.apt-table td .sync-error { color: var(--putzen); font-size: .7rem; margin-top: .15rem; }
+
+/* ── Admin: sync button (inline) ── */
+.btn-sync {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: var(--radius-sm);
+  padding: .3rem .6rem;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+
+.btn-sync:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Admin: notifications ── */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .85rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  font-size: .85rem;
+}
+
+.notif-item:last-child { border-bottom: none; }
+
+.notif-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sauber);
+  flex-shrink: 0;
+  margin-top: .45rem;
+}
+
+.notif-text { flex: 1; }
+
+.notif-time {
+  font-size: .72rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  margin-top: .1rem;
+}
+
+/* ── Admin: add apartment form ── */
+.add-form {
+  display: grid;
+  gap: .65rem;
+  padding: 1.1rem;
+}
+
+.add-form input {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .65rem .8rem;
+  font-size: .9rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+
+.add-form input:focus { border-color: var(--accent); }
+.add-form input::placeholder { color: var(--ink-muted); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: .75rem 1rem;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s;
+  width: 100%;
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+
+.form-error { color: var(--putzen); font-size: .78rem; }
+
+/* ── Mountain divider (dekorativ) ── */
+.mountain-divider {
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin: .25rem 0 1.25rem;
+  opacity: .18;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: .75rem 1.2rem;
+  border-radius: 999px;
+  font-size: .83rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .stat-number { font-size: 1.4rem; }
+  .apt-table th:nth-child(3), .apt-table td:nth-child(3) { display: none; }
+}
+
+/* ── Sprachwahlscreen ── */
+#lang-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn .22s ease;
+}
+
+#lang-overlay.fade-out {
+  animation: fadeOut .28s ease forwards;
+}
+
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+.lang-box {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lang-logo {
+  width: 52px;
+  height: 40px;
+  margin-bottom: .75rem;
+}
+
+.lang-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.lang-sub {
+  font-size: .65rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: .2rem;
+  margin-bottom: 1.5rem;
+}
+
+.lang-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--line);
+  margin-bottom: 1.5rem;
+}
+
+.lang-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.lang-btn {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  cursor: pointer;
+  transition: border-color .14s, background .14s;
+  text-align: left;
+}
+
+.lang-btn:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.lang-flag {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.lang-label {
+  flex: 1;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: .01em;
+}
+
+.lang-arrow {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: .6;
+}
+
+.lang-btn:hover .lang-arrow { opacity: 1; }
+
+/* ── Hausauswahl-Screen ── */
+#house-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 900;
+  overflow-y: auto;
+  animation: fadeIn .22s ease;
+}
+
+#house-overlay.fade-out { animation: fadeOut .25s ease forwards; }
+
+.house-screen {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem 1.1rem 3rem;
+}
+
+.house-screen-header {
+  margin-bottom: 1.5rem;
+}
+
+.house-screen-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: .25rem;
+}
+
+.house-screen-hint {
+  font-size: .8rem;
+  color: var(--ink-soft);
+}
+
+.house-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+}
+
+.house-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  transition: border-color .14s, background .14s;
+  text-align: left;
+  width: 100%;
+}
+
+.house-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.house-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.3rem;
+}
+
+.house-card-body { flex: 1; min-width: 0; }
+
+.house-card-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.house-card-address {
+  font-size: .75rem;
+  color: var(--ink-soft);
+  margin-top: .15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.house-card-meta {
+  display: flex;
+  gap: .4rem;
+  margin-top: .4rem;
+  flex-wrap: wrap;
+}
+
+.house-pill {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+}
+
+.house-pill.needs { background: var(--putzen-bg); color: var(--putzen); }
+.house-pill.all   { background: var(--surface-3); color: var(--ink-soft); }
+
+.house-card-arrow {
+  color: var(--accent);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.house-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ink-soft);
+  font-size: .9rem;
+}
+
+/* Back-Button (von Apartments zurück zu Häusern) */
+.btn-back {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  cursor: pointer;
+  padding: .4rem 0;
+  margin-bottom: .5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  transition: color .14s;
+}
+
+.btn-back:hover { color: var(--ink); }
+
+.current-house-label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.current-house-label span {
+  color: var(--ink-soft);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: .8rem;
+}
+
+/* ── Apartment-Notizen (Putzfrau-Ansicht) ── */
+.apt-notes {
+  margin-top: .6rem;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.apt-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  background: rgba(200, 150, 58, .1);
+  border: 1px solid rgba(200, 150, 58, .25);
+  border-radius: 8px;
+  padding: .5rem .65rem;
+  font-size: .82rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.apt-note-icon {
+  font-size: .9rem;
+  flex-shrink: 0;
+  margin-top: .05rem;
+}
+
+/* ── Notizen im Admin ── */
+.notes-panel {
+  border-top: 1px solid var(--line);
+  padding: .75rem 1.1rem;
+  background: var(--surface-2);
+}
+
+.notes-panel-title {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: .6rem;
+}
+
+.note-list {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  margin-bottom: .65rem;
+}
+
+.note-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: .5rem .7rem;
+  font-size: .83rem;
+  color: var(--ink);
+}
+
+.note-row-text { flex: 1; line-height: 1.4; }
+
+.note-del-btn {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 .1rem;
+  flex-shrink: 0;
+  transition: color .12s;
+}
+
+.note-del-btn:hover { color: var(--putzen); }
+
+.note-add-row {
+  display: flex;
+  gap: .5rem;
+}
+
+.note-input {
+  flex: 1;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: .55rem .7rem;
+  font-size: .85rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .14s;
+}
+
+.note-input:focus { border-color: var(--accent); }
+.note-input::placeholder { color: var(--ink-muted); }
+
+.note-add-btn {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  padding: .55rem .85rem;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .14s;
+  flex-shrink: 0;
+}
+
+.note-add-btn:hover { background: var(--accent-hover); }
+
+/* ── Buchungsübersicht ── */
+.bookings-block {
+  margin-top: .65rem;
+  border-top: 1px solid var(--line);
+  padding-top: .6rem;
+}
+
+.bookings-title {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: .45rem;
+}
+
+.booking-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: .4rem .75rem;
+  align-items: center;
+  padding: .45rem .6rem;
+  border-radius: 8px;
+  background: var(--surface-3);
+  margin-bottom: .35rem;
+  font-size: .78rem;
+}
+
+.booking-row:last-child { margin-bottom: 0; }
+
+.booking-date-group { display: flex; flex-direction: column; gap: .1rem; }
+.booking-date-label {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.booking-date-value { color: var(--ink); font-weight: 600; }
+
+.booking-nights {
+  font-size: .72rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Status-Filter Tabs (Putzfrau) */
+.status-tabs {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.status-tab {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .35rem .8rem;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .14s;
+  letter-spacing: .03em;
+}
+
+.status-tab:hover { border-color: var(--accent); color: var(--ink); }
+.status-tab.active { background: var(--accent); border-color: var(--accent); color: #111; }
+
+/* Apt-card mit Status (Putzfrau neue Ansicht) */
+.apt-card-top {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.apt-card-bottom {
+  width: 100%;
+  margin-top: .5rem;
+}
+
+/* Admin Buchungen-Panel */
+.admin-bookings-panel {
+  border-top: 1px solid var(--line);
+  padding: .75rem 1.1rem;
+  background: var(--surface-2);
+}
+
+.admin-bookings-title {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: .6rem;
+}
+
+.admin-booking-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .5rem .6rem;
+  border-radius: 8px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  margin-bottom: .4rem;
+  font-size: .8rem;
+}
+
+.admin-booking-row:last-child { margin-bottom: 0; }
+
+.admin-booking-arrow {
+  color: var(--accent);
+  font-size: .85rem;
+  flex-shrink: 0;
+}
+
+.admin-booking-in, .admin-booking-out {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.admin-booking-label {
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: .1rem;
+}
+
+.admin-booking-date { font-weight: 600; color: var(--ink); }
+
+.admin-booking-nights {
+  font-size: .72rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* ── Edit-Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 800;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn .18s ease;
+}
+
+.modal-overlay.closing { animation: fadeOut .2s ease forwards; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 520px;
+  padding: 1.5rem 1.25rem 2rem;
+}
+
+.modal-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 1.1rem;
+  letter-spacing: -.01em;
+}
+
+.modal-form { display: grid; gap: .65rem; }
+
+.modal-form input,
+.modal-form select {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .65rem .8rem;
+  font-size: .9rem;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  transition: border-color .14s;
+}
+
+.modal-form input:focus,
+.modal-form select:focus { border-color: var(--accent); }
+.modal-form input::placeholder { color: var(--ink-muted); }
+
+.modal-field-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: .25rem;
+}
+
+.modal-field { display: flex; flex-direction: column; }
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  margin-top: .25rem;
+}
+
+.btn-secondary {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .72rem;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background .14s;
+}
+
+.btn-secondary:hover { background: var(--surface-2); }
+
+/* ── Import-Panel ── */
+.import-hint {
+  font-size: .82rem;
+  color: var(--ink-soft);
+  margin-bottom: .85rem;
+  line-height: 1.5;
+}
+
+.import-file-row {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+
+.import-file-label {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .6rem .85rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color .14s;
+  white-space: nowrap;
+}
+
+.import-file-label:hover { border-color: var(--accent); color: var(--ink); }
+
+.import-filename {
+  font-size: .8rem;
+  color: var(--ink-soft);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-preview {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: .75rem;
+  font-size: .78rem;
+}
+
+.import-preview table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.import-preview th {
+  background: var(--surface-2);
+  padding: .45rem .7rem;
+  text-align: left;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.import-preview td {
+  padding: .4rem .7rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.import-preview tr:last-child td { border-bottom: none; }
+
+.import-result {
+  font-size: .82rem;
+  padding: .65rem .8rem;
+  border-radius: var(--radius-sm);
+  margin-top: .6rem;
+}
+
+.import-result.success { background: var(--sauber-bg); color: var(--sauber); }
+.import-result.partial { background: var(--putzen-bg); color: var(--putzen); }
+
+/* Personen-Badge in Buchungen */
+.booking-persons {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  grid-column: 1 / -1;
+  padding-top: .1rem;
+}
+
+.admin-booking-persons {
+  font-size: .75rem;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-edit {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: .3rem .6rem;
+  cursor: pointer;
+  transition: all .14s;
+}
+
+.btn-edit:hover { background: var(--accent); color: #111; }
+
+/* ── Personen-Editor in Admin-Buchungszeile ── */
+.persons-editor {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-top: .4rem;
+  padding-top: .4rem;
+  border-top: 1px solid var(--line);
+}
+
+.persons-field {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.persons-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.persons-input {
+  width: 48px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: .3rem .4rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+  outline: none;
+  transition: border-color .14s;
+}
+
+.persons-input:focus { border-color: var(--accent); }
+
+.persons-save-btn {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: 6px;
+  padding: .3rem .65rem;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: background .14s;
+  white-space: nowrap;
+}
+
+.persons-save-btn:hover { background: var(--accent-hover); }
+.persons-save-btn:disabled { opacity: .5; cursor: default; }
+
+/* ── Last-Minute Buchungs-Highlight ── */
+.booking-row.last-minute {
+  background: rgba(217, 107, 60, .12);
+  border: 1px solid rgba(217, 107, 60, .35);
+}
+
+.admin-booking-row.last-minute {
+  background: rgba(217, 107, 60, .1);
+  border: 1px solid rgba(217, 107, 60, .35);
+}
+
+.last-minute-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: var(--putzen-bg);
+  color: var(--putzen);
+  border: 1px solid rgba(217,107,60,.4);
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .2rem .55rem;
+  white-space: nowrap;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .65; }
+}
+
+/* ── Manuelle Buchung ── */
+.admin-booking-row.manual {
+  border: 1px solid rgba(200,150,58,.3);
+  background: rgba(200,150,58,.05);
+}
+
+.manual-badge {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 999px;
+  padding: .15rem .5rem;
+  white-space: nowrap;
+}
+
+.manual-booking-form {
+  border-top: 1px solid var(--line);
+  padding: .85rem 1.1rem;
+  background: var(--surface-2);
+  display: grid;
+  gap: .6rem;
+}
+
+.manual-booking-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+}
+
+.manual-booking-inputs input {
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: .55rem .7rem;
+  font-size: .82rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .14s;
+  width: 100%;
+}
+
+.manual-booking-inputs input:focus { border-color: var(--accent); }
+.manual-booking-inputs input::placeholder { color: var(--ink-muted); }
+
+.btn-manual-add {
+  background: var(--surface-3);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: .55rem .85rem;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .14s;
+  white-space: nowrap;
+}
+
+.btn-manual-add:hover { background: var(--accent); color: #111; }
+
+.btn-del-booking {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: .9rem;
+  padding: 0 .2rem;
+  transition: color .12s;
+  flex-shrink: 0;
+}
+
+.btn-del-booking:hover { color: var(--putzen); }
+
+/* ── PIN-Screen ── */
+#pin-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn .22s ease;
+}
+
+.pin-box {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pin-role {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 999px;
+  padding: .3rem .9rem;
+  margin: .75rem 0 1.5rem;
+}
+
+.pin-input-wrap {
+  display: flex;
+  gap: .5rem;
+  width: 100%;
+  margin-bottom: .6rem;
+}
+
+.pin-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  font-size: 1.2rem;
+  color: var(--ink);
+  outline: none;
+  letter-spacing: .2em;
+  text-align: center;
+  transition: border-color .14s;
+}
+
+.pin-input:focus { border-color: var(--accent); }
+.pin-input::placeholder { font-size: .85rem; letter-spacing: .04em; color: var(--ink-muted); }
+
+.pin-btn {
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: var(--radius);
+  width: 52px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .14s;
+  flex-shrink: 0;
+}
+
+.pin-btn:hover { background: var(--accent-hover); }
+
+.pin-error {
+  color: var(--putzen);
+  font-size: .82rem;
+  height: 1.2rem;
+  text-align: center;
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25%      { transform: translateX(-8px); }
+  75%      { transform: translateX(8px); }
+}
+
+/* ── Verwaltungs-Panels (heller hervorgehoben) ── */
+.panel-mgmt {
+  background: #242b24;
+  border-color: #363e36;
+}
+
+.panel-mgmt .panel-header {
+  background: #2a322a;
+  border-bottom-color: #363e36;
+}
+
+.panel-mgmt .panel-title {
+  color: #a0b09a;
+}
+
+.panel-mgmt .apt-table {
+  background: #242b24;
+}
+
+.panel-mgmt .apt-table th {
+  background: #2a322a;
+  color: #7a8a74;
+}
+
+.panel-mgmt .apt-table tr:hover td {
+  background: #2a322a;
+}
+
+.panel-mgmt .add-form input,
+.panel-mgmt .add-form select {
+  background: #2a322a;
+  border-color: #363e36;
+}
+
+.panel-mgmt .import-hint {
+  color: #7a8a74;
+}
+
+/* ── Reinigungsalarm Banner ── */
+.cleaning-alert-banner {
+  background: rgba(217,107,60,.15);
+  border: 1px solid rgba(217,107,60,.4);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  margin: .65rem .9rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.cleaning-alert-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: .05rem;
+}
+
+.cleaning-alert-text {
+  flex: 1;
+}
+
+.cleaning-alert-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--putzen);
+  margin-bottom: .2rem;
+}
+
+.cleaning-alert-list {
+  font-size: .78rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+/* ── Bestätigungs-Sheet ── */
+#confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 800;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn .2s ease;
+}
+
+#confirm-overlay.closing { animation: fadeOut .22s ease forwards; }
+
+.confirm-sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 520px;
+  padding: 1.5rem 1.25rem 2.5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.confirm-sheet-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: .3rem;
+  letter-spacing: -.01em;
+}
+
+.confirm-sheet-apt {
+  font-size: .78rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  cursor: pointer;
+  transition: border-color .14s;
+  user-select: none;
+}
+
+.confirm-item:hover { border-color: var(--accent); }
+
+.confirm-item.checked {
+  border-color: var(--sauber);
+  background: var(--sauber-bg);
+}
+
+.confirm-checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  transition: all .14s;
+  margin-top: .05rem;
+  background: var(--surface-3);
+}
+
+.confirm-item.checked .confirm-checkbox {
+  background: var(--sauber);
+  border-color: var(--sauber);
+  color: white;
+}
+
+.confirm-item-text {
+  flex: 1;
+  font-size: .88rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.confirm-item-sub {
+  font-size: .75rem;
+  color: var(--ink-soft);
+  margin-top: .2rem;
+}
+
+.btn-confirm-all {
+  width: 100%;
+  background: var(--sauber);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+  letter-spacing: .02em;
+}
+
+.btn-confirm-all:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.btn-confirm-cancel {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: .82rem;
+  margin-top: .75rem;
+  cursor: pointer;
+  padding: .4rem;
+}
+
+/* ── Haus-Karten in Admin ── */
+.house-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: .75rem;
+  overflow: hidden;
+}
+
+.house-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .14s;
+  background: var(--surface-2);
+}
+
+.house-card-header:hover { background: var(--surface-3); }
+
+.house-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.house-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+
+.house-card-count {
+  font-size: .72rem;
+  font-weight: 700;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: .18rem .6rem;
+}
+
+.house-card-chevron {
+  font-size: .75rem;
+  color: var(--ink-muted);
+  transition: transform .2s ease;
+}
+
+.house-card.collapsed .house-card-chevron {
+  transform: rotate(-90deg);
+}
+
+.house-card-body {
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+  transition: max-height .25s ease;
+}
+
+.house-card.collapsed .house-card-body {
+  max-height: 0 !important;
+  border-top: none;
+}
+
+/* ── Haus-Kacheln Admin ── */
+.house-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .85rem;
+  padding: .85rem;
+}
+
+.house-tile {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem 1rem;
+  cursor: pointer;
+  transition: all .18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.house-tile::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity .18s;
+}
+
+.house-tile:hover {
+  border-color: var(--accent);
+  background: var(--surface-3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+}
+
+.house-tile:hover::before { opacity: 1; }
+
+.house-tile-name {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+
+.house-tile-count {
+  font-size: .75rem;
+  color: var(--ink-soft);
+}
+
+.house-tile-stats {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
+  margin-top: .25rem;
+}
+
+.house-tile-stat {
+  font-size: .65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: .18rem .55rem;
+  white-space: nowrap;
+}
+
+.house-tile-stat.putzen {
+  background: var(--putzen-bg);
+  color: var(--putzen);
+}
+
+.house-tile-stat.sauber {
+  background: var(--sauber-bg);
+  color: var(--sauber);
+}
+
+.house-tile-stat.belegt {
+  background: rgba(74,143,212,.15);
+  color: var(--belegt);
+}
+
+.house-tile-arrow {
+  position: absolute;
+  bottom: 1rem; right: 1rem;
+  font-size: .85rem;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity .18s, transform .18s;
+}
+
+.house-tile:hover .house-tile-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* Apartment-Ansicht nach Klick */
+.apt-back-bar {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.btn-back-house {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-soft);
+  font-size: .8rem;
+  font-weight: 600;
+  padding: .35rem .75rem;
+  cursor: pointer;
+  transition: all .14s;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.btn-back-house:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.apt-back-house-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
