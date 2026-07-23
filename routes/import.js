@@ -111,13 +111,16 @@ async function importBookingRows(importRows) {
       }
 
       for (const [aptId, aptRows] of rowsByApt) {
-        // Laufende + zukünftige Buchungen ersetzen (außer manuelle);
-        // beendete Buchungen bleiben als Historie erhalten
+        // Buchungen ersetzen, die heute oder später enden (außer manuelle).
+        // "heute" ist sicher, weil die PMS-Liste immer ca. einen Monat
+        // Vergangenheit mitliefert – heutige Checkouts stehen also garantiert
+        // in der Liste und werden gleich wieder eingefügt. Früher beendete
+        // Buchungen bleiben als Historie erhalten.
         await client.query(
           `DELETE FROM bookings
            WHERE apartment_id=$1
            AND (source != 'manual' OR source IS NULL)
-           AND LEFT("end",10) > $2`,
+           AND LEFT("end",10) >= $2`,
           [aptId, today]
         );
 
