@@ -1542,6 +1542,15 @@ main {
   line-height: 1.6;
 }
 
+/* ── Daten-Warnung (Import-Selbstkontrolle) – rote Variante ── */
+.cleaning-alert-banner.data-warning {
+  background: rgba(220, 60, 60, .13);
+  border-color: rgba(220, 60, 60, .45);
+}
+.cleaning-alert-banner.data-warning .cleaning-alert-title {
+  color: #e05555;
+}
+
 /* ── Bestätigungs-Sheet ── */
 #confirm-overlay {
   position: fixed;

@@ -363,7 +363,8 @@ async function checkCleaningAlert() {
 initLangScreen(() => {
   loadPlan();
   checkCleaningAlert();
-  setInterval(checkCleaningAlert, 5 * 60 * 1000); // alle 5 Min prüfen
+  checkImportWarning();
+  setInterval(() => { checkCleaningAlert(); checkImportWarning(); }, 5 * 60 * 1000); // alle 5 Min prüfen
 });
 
 // Tippen außerhalb eines Info-Zeichens schließt offene Notiz-Tooltips (Handy)

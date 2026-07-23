@@ -340,6 +340,7 @@ document.getElementById('btn-import-start').addEventListener('click', async () =
     resultEl.className = `import-result ${data.skipped > 0 ? 'partial' : 'success'}`;
     resultEl.textContent = msg;
     if (data.created + data.updated > 0) { showToast(`${data.created + data.updated} ${t('importPersons')} importiert ✓`); loadApartments(); loadHouses(); }
+    checkImportWarning();
   } catch(err) {
     document.getElementById('import-result').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${err.message}</div>`;
   } finally { btn.disabled = false; btn.textContent = t('importStart'); }
@@ -830,6 +831,7 @@ initLangScreen(() => requirePin('admin', async () => {
   await loadHouses();
   loadApartments();
   loadNotifications();
+  checkImportWarning();
   setInterval(() => {
     // Nicht neu laden wenn gerade jemand in einem Eingabefeld schreibt
     const active = document.activeElement;
@@ -837,6 +839,7 @@ initLangScreen(() => requirePin('admin', async () => {
     if (!isTyping) loadApartments();
   }, 30000);
   setInterval(loadNotifications,  8000);
+  setInterval(checkImportWarning, 5 * 60 * 1000);
   loadCleaningLog();
   initVerwaltungToggle();
 }));

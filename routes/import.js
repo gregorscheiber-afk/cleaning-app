@@ -48,10 +48,16 @@ async function importBookingRows(importRows) {
       `SELECT id, name, pms_code FROM apartments WHERE pms_code IS NOT NULL AND pms_code != ''`
     );
     const aptByCode = {};
-    apartments.forEach(a => { aptByCode[a.pms_code.trim().toLowerCase()] = a; });
+    const aptById   = {};
+    apartments.forEach(a => {
+      aptByCode[a.pms_code.trim().toLowerCase()] = a;
+      aptById[a.id] = a;
+    });
 
     let created = 0, updated = 0, skipped = 0;
     const details = [];
+    const unknownCodes = new Set(); // Zimmer-Codes ohne passendes Apartment
+    let invalidCount = 0;           // unlesbare/unsinnige Zeilen
 
     // Zeilen validieren und nach Apartment gruppieren
     const rowsByApt = new Map(); // aptId → [{start,end,guestName,persons}]
@@ -64,12 +70,12 @@ async function importBookingRows(importRows) {
       const end       = parseDate(row.abreise);
 
       if (!code || !start || !end) {
-        skipped++;
+        skipped++; invalidCount++;
         details.push({ zimmer: row.zimmer || '?', anreise: row.anreise, abreise: row.abreise, status: 'datum_unlesbar' });
         continue;
       }
       if (end <= start) {
-        skipped++;
+        skipped++; invalidCount++;
         details.push({ zimmer: row.zimmer, start, end, status: 'abreise_vor_anreise' });
         continue;
       }
@@ -77,6 +83,7 @@ async function importBookingRows(importRows) {
       const apt = aptByCode[code];
       if (!apt) {
         skipped++;
+        unknownCodes.add(String(row.zimmer).trim());
         details.push({ zimmer: row.zimmer, status: 'kein_apartment' });
         continue;
       }
@@ -177,7 +184,88 @@ async function importBookingRows(importRows) {
       await recomputeStatus(aptId);
     }
 
-    return { created, updated, skipped, total: importRows.length, details };
+    // Selbstkontrolle: stimmt die Datenbank jetzt exakt mit der Datei überein?
+    const check = await verifyImport({
+      rowsByApt, aptById, unknownCodes, invalidCount,
+      minStart: minStart || today,
+    });
+
+    return { created, updated, skipped, total: importRows.length, details, check };
+}
+
+// ── Selbstkontrolle nach jedem Import ─────────────────────
+// Vergleicht die importierte Datei Zeile für Zeile mit der Datenbank und
+// speichert das Ergebnis. Admin & Planer zeigen bei Abweichungen eine
+// Warnung an (GET /api/import-check).
+async function verifyImport({ rowsByApt, aptById, unknownCodes, invalidCount, minStart }) {
+  const missing = []; // in der Datei, fehlt in der DB
+  const stale   = []; // in der DB, steht nicht (mehr) in der Datei
+
+  for (const [aptId, aptRows] of rowsByApt) {
+    const { rows: dbRows } = await pool.query(
+      `SELECT LEFT(start,10) as s, LEFT("end",10) as e, guest_name
+       FROM bookings
+       WHERE apartment_id=$1
+       AND (source != 'manual' OR source IS NULL)
+       AND LEFT("end",10) >= $2`,
+      [aptId, minStart]
+    );
+    const dbSet   = new Set(dbRows.map(r => `${r.s}|${r.e}`));
+    const fileSet = new Set(aptRows.map(r => `${r.start}|${r.end}`));
+    const aptName = aptById[aptId]?.name || `Apartment ${aptId}`;
+
+    aptRows.forEach(r => {
+      if (!dbSet.has(`${r.start}|${r.end}`))
+        missing.push({ apt: aptName, start: r.start, end: r.end, gast: r.guestName });
+    });
+    dbRows.forEach(r => {
+      if (!fileSet.has(`${r.s}|${r.e}`))
+        stale.push({ apt: aptName, start: r.s, end: r.e, gast: r.guest_name });
+    });
+  }
+
+  // Apartments mit PMS-Code, die Buchungen im Zeitfenster haben, aber in der
+  // Datei überhaupt nicht vorkommen (z. B. alles storniert – oder Teilliste)
+  const inFile = [...rowsByApt.keys()];
+  const params = [minStart, ...inFile];
+  const notIn  = inFile.length
+    ? `AND a.id NOT IN (${inFile.map((_, i) => `$${i + 2}`).join(',')})` : '';
+  const { rows: orphanApts } = await pool.query(
+    `SELECT DISTINCT a.name FROM apartments a
+     JOIN bookings b ON b.apartment_id = a.id
+     WHERE a.pms_code IS NOT NULL AND a.pms_code != ''
+     AND (b.source != 'manual' OR b.source IS NULL)
+     AND LEFT(b."end",10) >= $1
+     ${notIn}`,
+    params
+  );
+
+  const check = {
+    checked_at: new Date().toISOString(),
+    ok: !missing.length && !stale.length && !unknownCodes.size &&
+        !invalidCount && !orphanApts.length,
+    missing_total: missing.length,
+    stale_total:   stale.length,
+    missing: missing.slice(0, 20),
+    stale:   stale.slice(0, 20),
+    unknown_codes: [...unknownCodes].slice(0, 20),
+    invalid_rows:  invalidCount,
+    apartments_not_in_file: orphanApts.map(a => a.name).slice(0, 20),
+  };
+
+  await pool.query(
+    `INSERT INTO app_meta (key, value) VALUES ('import_check', $1)
+     ON CONFLICT (key) DO UPDATE SET value=$1`,
+    [JSON.stringify(check)]
+  ).catch(e => console.error('import_check speichern fehlgeschlagen:', e.message));
+
+  if (!check.ok) {
+    console.warn('Import-Selbstkontrolle meldet Abweichungen:',
+      JSON.stringify({ missing: check.missing_total, stale: check.stale_total,
+        unknown: check.unknown_codes.length, invalid: check.invalid_rows,
+        not_in_file: check.apartments_not_in_file.length }));
+  }
+  return check;
 }
 
 // POST /api/import-bookings – manueller Upload aus dem Admin
@@ -392,6 +480,15 @@ router.post('/auto-import', upload.single('file'), async (req, res, next) => {
     console.error('Auto-Import Fehler:', e.message);
     if (!res.headersSent) next(e);
   }
+});
+
+// GET /api/import-check – Ergebnis der letzten Import-Selbstkontrolle.
+// Offen, weil auch die (offene) Planer-Ansicht die Warnung anzeigen soll.
+router.get('/import-check', async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query(`SELECT value FROM app_meta WHERE key='import_check'`);
+    res.json(rows[0] ? JSON.parse(rows[0].value) : { ok: null });
+  } catch(e) { next(e); }
 });
 
 // GET /api/last-import – Zeitpunkt des letzten automatischen Imports
