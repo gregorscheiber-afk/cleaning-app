@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../db');
-const { recomputeStatus } = require('../services/icalSync');
+const { recomputeStatus, recomputeAll } = require('../services/icalSync');
 const { notifyApartmentClean } = require('../services/notify');
 const { requireAdmin } = require('../services/auth');
 const router = express.Router();
@@ -41,6 +41,20 @@ router.get('/cleanings', requireAdmin, async (req, res, next) => {
       ? await pool.query(`SELECT * FROM cleanings WHERE apartment_id=$1 ORDER BY confirmed_at DESC`, [apartment_id])
       : await pool.query(`SELECT * FROM cleanings ORDER BY confirmed_at DESC LIMIT 100`);
     res.json(rows);
+  } catch(e) { next(e); }
+});
+
+// POST /api/reset-cleaning-log – Reinigungslog & Bestätigungen auf 0 setzen
+// (z. B. zum Saisonstart). Achtung: Apartments, deren letzte Reinigung
+// damit gelöscht wird, springen zurück auf "muss_geputzt_werden", bis das
+// Team sie neu bestätigt.
+router.post('/reset-cleaning-log', requireAdmin, async (_req, res, next) => {
+  try {
+    const { rowCount: cleanings }     = await pool.query(`DELETE FROM cleanings`);
+    const { rowCount: notifications } = await pool.query(`DELETE FROM notifications`);
+    await recomputeAll();
+    console.log(`Reinigungslog zurückgesetzt: ${cleanings} Reinigungen, ${notifications} Benachrichtigungen gelöscht.`);
+    res.json({ ok: true, cleanings, notifications });
   } catch(e) { next(e); }
 });
 

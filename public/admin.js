@@ -814,6 +814,26 @@ async function loadCleaningLog() {
   }
 }
 
+// ── Reinigungslog zurücksetzen (z. B. zum Saisonstart) ────
+document.getElementById('btn-reset-log')?.addEventListener('click', async () => {
+  const sure = confirm(
+    'Reinigungslog und "Letzte Bestätigungen" komplett auf 0 setzen?\n\n' +
+    'Achtung: Apartments, die zuletzt als sauber bestätigt wurden, springen ' +
+    'dadurch zurück auf "Zu reinigen", bis das Team sie neu bestätigt.'
+  );
+  if (!sure) return;
+  const sure2 = confirm('Wirklich sicher? Das kann nicht rückgängig gemacht werden.');
+  if (!sure2) return;
+  try {
+    const res = await fetch('/api/reset-cleaning-log', { method: 'POST' });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Fehler');
+    showToast(`Zurückgesetzt: ${d.cleanings} Reinigungen, ${d.notifications} Meldungen gelöscht ✓`);
+    lastTs = null;
+    loadNotifications(); loadCleaningLog(); loadApartments(); loadHouses();
+  } catch (err) { showToast('Fehler: ' + err.message); }
+});
+
 // ── Start ─────────────────────────────────────────────────
 // Läuft die Admin-Session serverseitig ab (Cookie ungültig), PIN erneut abfragen
 const _origFetch = window.fetch.bind(window);
