@@ -18,10 +18,6 @@ const PLAN_LABELS = {
 badgeHeader.textContent = PLAN_LABELS[planType] || 'Belegungsplan';
 document.title = `MYALPS · ${PLAN_LABELS[planType] || 'Belegungsplan'}`;
 
-// Button "Reinigung" führt zur Reinigungs-Übersicht DIESES Plans
-const btnToCleaning = document.getElementById('btn-to-cleaning');
-if (btnToCleaning) btnToCleaning.href = `/?plan=${planType}`;
-
 // Hausfilter nur für WIWA
 if (!isMainstreet) houseFilter.style.display = 'block';
 

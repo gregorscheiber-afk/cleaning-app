@@ -280,7 +280,9 @@ html, body { height: 100%; overflow: hidden; }
 </head>
 <body>
 <header class="topbar">
-  <a class="topbar-logo" href="/">
+  <!-- Logo bewusst OHNE Link: aus dem Planer soll man nicht zur
+       Reinigungs-Ansicht wechseln können -->
+  <a class="topbar-logo">
     <svg class="logo-mark" viewBox="0 0 40 32" fill="none">
       <path d="M0 30 L8 14 L13 21 L20 6 L27 21 L32 14 L40 30 Z" fill="#c8963a"/>
     </svg>
@@ -288,7 +290,6 @@ html, body { height: 100%; overflow: hidden; }
   </a>
   <div class="topbar-right">
     <span class="page-role-badge" id="plan-badge">Belegungsplan</span>
-    <a class="nav-pill" id="btn-to-cleaning" href="/">🧹 Reinigung</a>
   </div>
 </header>
 
