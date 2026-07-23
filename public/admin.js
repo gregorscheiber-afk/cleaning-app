@@ -236,26 +236,70 @@ fileInput.addEventListener('change', () => {
       const wb   = XLSX.read(e.target.result, { type: 'array', cellDates: true });
       const ws   = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-      let headerRow = -1;
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        if (row && String(row[1] || '').trim().toLowerCase() === 'zimmer') { headerRow = i; break; }
-      }
-      if (headerRow === -1) {
-        document.getElementById('import-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
-        return;
-      }
       importRows = [];
-      for (let i = headerRow + 1; i < data.length; i++) {
-        const row = data[i];
-        if (!row || !row[1]) continue;
-        importRows.push({
-          zimmer:   String(row[1] || '').trim(),
-          gast:     String(row[2] || '').trim(),
-          personen: String(row[3] || '').trim(),
-          anreise:  String(row[4] || '').trim(),
-          abreise:  String(row[5] || '').trim(),
-        });
+
+      // ── Format B (PMS-Export): Kopfzeile "Zi-Nr.", Aufenthalt kombiniert
+      //    z. B. "16.06. - 18.06.2026 (2)" – wie in routes/import.js
+      let headerRowB = -1, colZi = -1, colName = -1, colPers = -1, colStay = -1;
+      for (let i = 0; i < data.length && headerRowB === -1; i++) {
+        const row = data[i] || [];
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim().toLowerCase();
+          if (val === 'zi-nr.' || val === 'zi-nr' || val === 'zimmer-nr.') {
+            headerRowB = i; colZi = c;
+            row.forEach((h, cc) => {
+              const v = String(h || '').trim().toLowerCase();
+              if (v === 'name')            colName = cc;
+              if (v.startsWith('pers'))    colPers = cc;
+              if (v.startsWith('aufenthalt')) colStay = cc;
+            });
+            break;
+          }
+        }
+      }
+
+      if (headerRowB !== -1 && colStay !== -1) {
+        for (let i = headerRowB + 1; i < data.length; i++) {
+          const row = data[i] || [];
+          const code = String(row[colZi] || '').trim();
+          const stay = String(row[colStay] || '').trim();
+          if (!code || !stay) continue;
+          const m = stay.match(/(\d{1,2})\.(\d{1,2})\.(?:\s*(\d{4}))?\s*-\s*(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+          if (!m) continue;
+          const [, d1, m1, y1, d2, m2, yr] = m;
+          const year2 = parseInt(yr);
+          let year1 = y1 ? parseInt(y1) : year2;
+          if (!y1 && parseInt(m1) > parseInt(m2)) year1 = year2 - 1;
+          importRows.push({
+            zimmer:   code,
+            gast:     String(row[colName] || '').trim(),
+            personen: String(row[colPers] || '').trim().replace(/\u00a0/g, ' '),
+            anreise:  `${year1}-${m1.padStart(2,'0')}-${d1.padStart(2,'0')}`,
+            abreise:  `${year2}-${m2.padStart(2,'0')}-${d2.padStart(2,'0')}`,
+          });
+        }
+      } else {
+        // ── Format A (altes Excel): Kopfzeile "Zimmer" in Spalte B
+        let headerRow = -1;
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i];
+          if (row && String(row[1] || '').trim().toLowerCase() === 'zimmer') { headerRow = i; break; }
+        }
+        if (headerRow === -1) {
+          document.getElementById('import-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
+          return;
+        }
+        for (let i = headerRow + 1; i < data.length; i++) {
+          const row = data[i];
+          if (!row || !row[1]) continue;
+          importRows.push({
+            zimmer:   String(row[1] || '').trim(),
+            gast:     String(row[2] || '').trim(),
+            personen: String(row[3] || '').trim(),
+            anreise:  String(row[4] || '').trim(),
+            abreise:  String(row[5] || '').trim(),
+          });
+        }
       }
       if (!importRows.length) {
         document.getElementById('import-preview').innerHTML = `<div style="color:var(--putzen);font-size:.82rem">${t('importNoRows')}</div>`;
