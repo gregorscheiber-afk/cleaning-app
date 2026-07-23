@@ -111,34 +111,39 @@ const BASE = window.location.origin;
 const ROLES = [
   {
     id:    'admin',
+    cls:   'admin',
     label: 'Admin',
     url:   `${BASE}/admin.html`,
     desc:  'Vollzugriff · Apartments, Import, Einstellungen',
     pin:   'PIN_ADMIN (in Railway gesetzt)',
   },
   {
-    id:    'planer',
-    label: 'Belegungsplan',
-    url:   `${BASE}/planer.html`,
-    desc:  'Buchungsübersicht · Gantt-Kalender',
-    pin:   'PIN_PLANER (in Railway gesetzt)',
+    id:    'cleaner-wiwa',
+    cls:   'cleaner',
+    label: 'Reinigung Team WIWA',
+    url:   `${BASE}/?plan=wiwa`,
+    desc:  'Historical · Jordans Lodge · Mühlhof · Pure · Pirchhof',
+    pin:   '',
   },
   {
-    id:    'cleaner',
-    label: 'Reinigung',
-    url:   `${BASE}/`,
-    desc:  'Putzfrau-Zugang · Apartment-Status bestätigen',
+    id:    'cleaner-mainstreet',
+    cls:   'cleaner',
+    label: 'Reinigung Team MAINSTREET',
+    url:   `${BASE}/?plan=mainstreet`,
+    desc:  'Chalet White Pearl & Chalet Cecilia',
     pin:   '',
   },
   {
     id:    'wiwa',
+    cls:   'planer',
     label: 'Plan WIWA',
     url:   `${BASE}/planer.html`,
-    desc:  'Belegungsplan · Alle Häuser',
+    desc:  'Belegungsplan · alle Häuser außer White Pearl & Cecilia',
     pin:   '',
   },
   {
     id:    'mainstreet',
+    cls:   'planer',
     label: 'Plan MAINSTREET',
     url:   `${BASE}/planer.html?plan=mainstreet`,
     desc:  'Belegungsplan · Chalet White Pearl & Chalet Cecilia',
@@ -152,7 +157,7 @@ ROLES.forEach(role => {
   const card = document.createElement('div');
   card.className = 'qr-card';
   card.innerHTML = `
-    <div class="qr-role ${role.id}">${role.label}</div>
+    <div class="qr-role ${role.cls}">${role.label}</div>
     <div class="qr-code-wrap" id="qr-${role.id}"></div>
     <div class="qr-url">${role.url}</div>
     <div class="qr-pin-hint">🔑 ${role.pin}</div>
