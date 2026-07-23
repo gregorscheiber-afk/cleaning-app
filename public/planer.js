@@ -266,12 +266,20 @@ function renderPlan(data, from, days) {
         }
         placed.push({ absStart, absEnd, el: block });
         const fmtDE = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.${y}`; };
-        block.title = `${b.guest_name||''} · ${b.persons||''} · ${fmtDE(bStart)} → ${fmtDE(bEnd)}`;
+        // Zusatzleistungen (Frühstück/Zwischenreinigung) – Info für José
+        const svcTitle =
+          (b.breakfast     ? ` · Frühstück: ${b.breakfast === 'ja' ? 'mit' : 'ohne'}` : '') +
+          (b.interim_clean ? ` · Zwischenreinigung: ${b.interim_clean === 'ja' ? 'mit' : 'ohne'}` : '');
+        block.title = `${b.guest_name||''} · ${b.persons||''} · ${fmtDE(bStart)} → ${fmtDE(bEnd)}${svcTitle}`;
+        const svcBadges =
+          (b.breakfast     ? `<span class="bk-svc">🥐${b.breakfast === 'ja' ? '✓' : '✗'}</span>` : '') +
+          (b.interim_clean ? `<span class="bk-svc">🧹${b.interim_clean === 'ja' ? '✓' : '✗'}</span>` : '');
         const showNote = isNextBooking && aptNotes.length > 0;
         const noteText = aptNotes.map(n => '• ' + n).join('\n');
         block.innerHTML = `
           <span class="bk-guest">${esc(b.guest_name||'–')}</span>
           ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}
+          ${svcBadges}
           ${showNote ? `<span class="bk-note-icon">ℹ</span>` : ''}`;
         cell.appendChild(block);
 

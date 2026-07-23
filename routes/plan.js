@@ -48,6 +48,18 @@ router.get('/plan', async (req, res, next) => {
         [...ids, to, from]
       );
       bookings = rows;
+
+      // Zusatzleistungen (Frühstück/Zwischenreinigung) zuordnen
+      const { rows: services } = await pool.query(
+        `SELECT * FROM booking_services WHERE apartment_id IN (${ph})`, ids
+      );
+      const svcMap = {};
+      services.forEach(s => { svcMap[`${s.apartment_id}|${s.start}`] = s; });
+      bookings.forEach(b => {
+        const svc = svcMap[`${b.apartment_id}|${String(b.start).substring(0,10)}`];
+        b.breakfast     = svc?.breakfast     || null;
+        b.interim_clean = svc?.interim_clean || null;
+      });
     }
 
     // Notizen pro Apartment (getrennt: Putzfrau-Notizen und José-Notizen)

@@ -69,6 +69,18 @@ async function initDb() {
       key   TEXT PRIMARY KEY,
       value TEXT
     );
+
+    -- Zusatzleistungen pro Buchung (z. B. Frühstück/Zwischenreinigung für José).
+    -- Bewusst NICHT in bookings: der Excel-Import ersetzt Buchungen komplett,
+    -- diese Tabelle bleibt bestehen. Anker = Apartment + Anreisedatum.
+    CREATE TABLE IF NOT EXISTS booking_services (
+      id            SERIAL PRIMARY KEY,
+      apartment_id  INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      start         TEXT NOT NULL,
+      breakfast     TEXT,
+      interim_clean TEXT,
+      UNIQUE(apartment_id, start)
+    );
   `);
 
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);

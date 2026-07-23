@@ -25,8 +25,19 @@ async function enrichApartments(apts) {
     `SELECT * FROM bookings WHERE apartment_id IN (${ph}) AND "end">$${ids.length+1} ORDER BY start ASC`,
     [...ids, now]
   );
+
+  // Zusatzleistungen (Frühstück/Zwischenreinigung) den Buchungen zuordnen
+  const { rows: services } = await pool.query(
+    `SELECT * FROM booking_services WHERE apartment_id IN (${ph})`, ids
+  );
+  const svcMap = {};
+  services.forEach(s => { svcMap[`${s.apartment_id}|${s.start}`] = s; });
+
   const bookingsMap = {};
   bookings.forEach(b => {
+    const svc = svcMap[`${b.apartment_id}|${String(b.start).substring(0,10)}`];
+    b.breakfast     = svc?.breakfast     || null;
+    b.interim_clean = svc?.interim_clean || null;
     if (!bookingsMap[b.apartment_id]) bookingsMap[b.apartment_id] = [];
     if (bookingsMap[b.apartment_id].length < 2) bookingsMap[b.apartment_id].push(b);
   });

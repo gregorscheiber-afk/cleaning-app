@@ -37,6 +37,35 @@ router.post('/apartments/:id/bookings', requireAdmin, async (req, res, next) => 
   } catch(e) { next(e); }
 });
 
+// PUT /api/bookings/:id/services – Zusatzleistungen setzen (José/Cecilia)
+// Body: { breakfast: 'ja'|'nein'|null, interim_clean: 'ja'|'nein'|null }
+// Gespeichert wird pro Apartment + Anreisedatum, damit die Angaben den
+// stündlichen Excel-Import überleben.
+router.put('/bookings/:id/services', requireAdmin, async (req, res, next) => {
+  try {
+    const norm = v => (v === 'ja' || v === 'nein') ? v : null;
+    const breakfast     = norm((req.body || {}).breakfast);
+    const interim_clean = norm((req.body || {}).interim_clean);
+
+    const { rows } = await pool.query(
+      `SELECT apartment_id, LEFT(start,10) as sd FROM bookings WHERE id=$1`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Buchung nicht gefunden' });
+    const { apartment_id, sd } = rows[0];
+
+    const { rows: saved } = await pool.query(
+      `INSERT INTO booking_services (apartment_id, start, breakfast, interim_clean)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT (apartment_id, start) DO UPDATE
+         SET breakfast=EXCLUDED.breakfast, interim_clean=EXCLUDED.interim_clean
+       RETURNING *`,
+      [apartment_id, sd, breakfast, interim_clean]
+    );
+    res.json(saved[0]);
+  } catch(e) { next(e); }
+});
+
 // DELETE /api/bookings/:id – nur manuelle Buchungen löschbar
 router.delete('/bookings/:id', requireAdmin, async (req, res, next) => {
   try {
