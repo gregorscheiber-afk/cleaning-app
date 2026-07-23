@@ -276,7 +276,11 @@ function renderPlan(data, from, days) {
           (b.interim_clean ? `<span class="bk-svc">🧹${b.interim_clean === 'ja' ? '✓' : '✗'}</span>` : '');
         const showNote = isNextBooking && aptNotes.length > 0;
         const noteText = aptNotes.map(n => '• ' + n).join('\n');
+        // Datum prominent auf dem Balken – für die Reinigungskräfte wichtiger
+        // als der Gastname (dieser dünner, wird bei Platzmangel abgekürzt)
+        const fmtKurz = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.`; };
         block.innerHTML = `
+          <span class="bk-dates">${fmtKurz(bStart)}–${fmtKurz(bEnd)}</span>
           <span class="bk-guest">${esc(b.guest_name||'–')}</span>
           ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}
           ${svcBadges}
