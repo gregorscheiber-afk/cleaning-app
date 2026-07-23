@@ -3,8 +3,17 @@ const { pool } = require('../db');
 const { requireAdmin } = require('../services/auth');
 const router = express.Router();
 
-router.get('/', async (_req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
+    // Optionaler Plan-Filter (gleiche Regel wie im Planer):
+    // mainstreet = White Pearl & Cecilia, wiwa = alle anderen Häuser
+    const { plan } = req.query;
+    let where = '';
+    if (plan === 'mainstreet') {
+      where = `WHERE (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
+    } else if (plan === 'wiwa') {
+      where = `WHERE NOT (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
+    }
     const { rows } = await pool.query(`
       SELECT h.*,
         COUNT(a.id)::int as total,
@@ -13,6 +22,7 @@ router.get('/', async (_req, res, next) => {
         SUM(CASE WHEN a.status='belegt'              THEN 1 ELSE 0 END)::int as occupied
       FROM houses h
       LEFT JOIN apartments a ON a.house_id=h.id
+      ${where}
       GROUP BY h.id ORDER BY h.name
     `);
     res.json(rows);

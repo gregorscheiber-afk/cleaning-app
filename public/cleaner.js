@@ -1,6 +1,10 @@
 const listEl  = document.getElementById('list');
 const toastEl = document.getElementById('toast');
 
+// Optionaler Plan-Filter aus der Adresse (/?plan=wiwa oder /?plan=mainstreet):
+// zeigt in der Hausauswahl nur die Häuser des jeweiligen Reinigungsplans
+const cleanerPlan = new URLSearchParams(window.location.search).get('plan');
+
 let selectedHouse = null;
 let activeFilter  = 'all';
 let allApartments = [];
@@ -66,7 +70,10 @@ function renderBookings(bookings) {
 async function showHouseScreen() {
   document.getElementById('house-overlay')?.remove();
   let houses = [];
-  try { houses = await (await fetch('/api/houses')).json(); } catch {}
+  try {
+    const url = '/api/houses' + (cleanerPlan ? `?plan=${encodeURIComponent(cleanerPlan)}` : '');
+    houses = await (await fetch(url)).json();
+  } catch {}
 
   const overlay = document.createElement('div');
   overlay.id = 'house-overlay';
