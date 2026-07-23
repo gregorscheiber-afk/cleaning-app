@@ -33,6 +33,7 @@ async function initDb() {
       id           SERIAL PRIMARY KEY,
       apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
       message      TEXT NOT NULL,
+      note_type    TEXT DEFAULT 'team',
       created_at   TIMESTAMPTZ DEFAULT NOW()
     );
 
@@ -73,6 +74,7 @@ async function initDb() {
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS checkout_time TEXT DEFAULT '09:30'`);
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS persons           TEXT`);
+  await pool.query(`ALTER TABLE apartment_notes ADD COLUMN IF NOT EXISTS note_type    TEXT DEFAULT 'team'`);
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS source            TEXT DEFAULT 'ical'`);
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS guest_name        TEXT`);
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS highlighted_until TEXT`);

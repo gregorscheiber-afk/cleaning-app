@@ -92,6 +92,55 @@ function renderNotesPanel(apt) {
     </div>`;
 }
 
+// ── José-Notizen (nur Chalet Cecilia; sichtbar nur in Admin & Planer) ──
+function isCeciliaApt(apt) {
+  const houseName = allHouses.find(h => h.id === apt.house_id)?.name || '';
+  return houseName.toLowerCase().includes('cecilia');
+}
+
+function renderJoseNotesPanel(apt) {
+  const notes = (apt.jose_notes || []).map(n => `
+    <div class="note-row">
+      <span class="note-row-text">${esc(n.message)}</span>
+      <button class="note-del-btn" data-del-jose="${n.id}">✕</button>
+    </div>`).join('');
+  return `
+    <div class="notes-panel" id="jose-panel-${apt.id}" style="background:rgba(74,143,212,.05);border-top:1px dashed var(--line)">
+      <div class="notes-panel-title">📝 Notiz für José <span style="font-weight:400;color:var(--ink-muted)">(nur Admin &amp; Plan – nicht fürs Reinigungs-Team)</span></div>
+      <div class="note-list">${notes || `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noteEmpty')}</div>`}</div>
+      <div class="note-add-row">
+        <input class="note-input" id="jose-input-${apt.id}" type="text" placeholder="z. B. Rasen mähen, Filter tauschen" maxlength="120"/>
+        <button class="note-add-btn" data-apt-jose="${apt.id}">${t('noteAdd')}</button>
+      </div>
+    </div>`;
+}
+
+function attachJoseNoteHandlers(apt) {
+  const addBtn = document.querySelector(`[data-apt-jose="${apt.id}"].note-add-btn`);
+  const input  = document.getElementById(`jose-input-${apt.id}`);
+  if (!addBtn || !input) return;
+  const doAdd = async () => {
+    const msg = input.value.trim(); if (!msg) return;
+    addBtn.disabled = true; addBtn.textContent = '…';
+    try {
+      await fetch(`/api/apartments/${apt.id}/notes`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ message: msg, note_type: 'jose' }),
+      });
+      input.value = ''; showToast(t('toastAdded')); loadApartments();
+    } catch { showToast(t('toastError')); }
+    finally { addBtn.textContent = t('noteAdd'); addBtn.disabled = false; }
+  };
+  addBtn.addEventListener('click', doAdd);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+  document.querySelectorAll(`#jose-panel-${apt.id} [data-del-jose]`).forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/notes/${btn.dataset.delJose}`, { method: 'DELETE' });
+      showToast(t('toastDeleted')); loadApartments();
+    });
+  });
+}
+
 // ── Buchungen-Panel ───────────────────────────────────────
 function parsePersons(persons) {
   if (!persons) return { adults: 0, children: 0, babies: 0 };
@@ -601,7 +650,10 @@ function renderHouseApts(houseId) {
     renderHouseTiles();
   });
 
-  apts.forEach(apt => attachNoteHandlers(apt));
+  apts.forEach(apt => {
+    attachNoteHandlers(apt);
+    if (isCeciliaApt(apt)) attachJoseNoteHandlers(apt);
+  });
 
   container.querySelectorAll('[data-del-booking]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -666,6 +718,7 @@ function renderAptRow(apt) {
             <td style="padding:.75rem 1.1rem"></td>
           </tr>
           <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
+          ${isCeciliaApt(apt) ? `<tr><td colspan="5" style="padding:0">${renderJoseNotesPanel(apt)}</td></tr>` : ''}
           <tr>
             <td colspan="5" style="padding:0">
               <div class="admin-bookings-panel">

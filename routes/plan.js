@@ -50,15 +50,19 @@ router.get('/plan', async (req, res, next) => {
       bookings = rows;
     }
 
-    // Notizen pro Apartment
+    // Notizen pro Apartment (getrennt: Putzfrau-Notizen und José-Notizen)
     let notesByApt = {};
+    let joseByApt  = {};
     if (ids.length) {
       const nph = ids.map((_,i) => `$${i+1}`).join(',');
       const { rows: notes } = await pool.query(
-        `SELECT apartment_id, message FROM apartment_notes WHERE apartment_id IN (${nph}) ORDER BY created_at ASC`,
+        `SELECT apartment_id, message, note_type FROM apartment_notes WHERE apartment_id IN (${nph}) ORDER BY created_at ASC`,
         ids
       );
-      notes.forEach(n => { (notesByApt[n.apartment_id] ??= []).push(n.message); });
+      notes.forEach(n => {
+        if (n.note_type === 'jose') (joseByApt[n.apartment_id] ??= []).push(n.message);
+        else                        (notesByApt[n.apartment_id] ??= []).push(n.message);
+      });
     }
 
     const bookingsByApt = {};
@@ -66,8 +70,9 @@ router.get('/plan', async (req, res, next) => {
 
     const result = apartments.map(apt => ({
       ...apt,
-      bookings: bookingsByApt[apt.id] || [],
-      notes:    notesByApt[apt.id]    || [],
+      bookings:   bookingsByApt[apt.id] || [],
+      notes:      notesByApt[apt.id]    || [],
+      jose_notes: joseByApt[apt.id]     || [],
     }));
 
     res.json({ from, to, days, plan, apartments: result, houses: allHouses });

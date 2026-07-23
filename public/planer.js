@@ -175,6 +175,7 @@ function renderPlan(data, from, days) {
             <div>
               <span class="status-dot dot-${apt.status}"></span>
               <span class="apt-code">${esc(apt.pms_code || apt.name)}</span>
+              ${(apt.jose_notes || []).length ? `<span class="bk-note-icon" data-jose-apt="${apt.id}" style="display:inline-flex;margin-left:.35rem;vertical-align:middle">📝</span>` : ''}
             </div>
             <div class="apt-time-label">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</div>
           </div>
@@ -315,6 +316,42 @@ function renderPlan(data, from, days) {
           });
         }
       });
+    });
+  });
+
+  // José-Notizen: 📝 beim Apartment-Namen, Tooltip per Hover/Antippen
+  apartments.forEach(apt => {
+    if (!(apt.jose_notes || []).length) return;
+    const icon = scrollEl.querySelector(`[data-jose-apt="${apt.id}"]`);
+    if (!icon) return;
+    const noteText = apt.jose_notes.map(n => '• ' + n).join('\n');
+
+    const showTip = () => {
+      if (icon._tip) return;
+      const tip = document.createElement('div');
+      tip.className = 'note-tooltip-float';
+      tip.textContent = noteText;
+      document.body.appendChild(tip);
+      const r = icon.getBoundingClientRect();
+      let left = r.left + r.width / 2;
+      const tipW = Math.min(260, window.innerWidth - 20);
+      if (left - tipW / 2 < 10) left = tipW / 2 + 10;
+      if (left + tipW / 2 > window.innerWidth - 10) left = window.innerWidth - tipW / 2 - 10;
+      tip.style.left = left + 'px';
+      tip.style.top  = (r.top - 8) + 'px';
+      icon._tip = tip;
+    };
+    const hideTip = () => { if (icon._tip) { icon._tip.remove(); icon._tip = null; } };
+
+    icon.addEventListener('mouseenter', showTip);
+    icon.addEventListener('mouseleave', hideTip);
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (icon._tip) { hideTip(); } else {
+        document.querySelectorAll('.note-tooltip-float').forEach(t => t.remove());
+        document.querySelectorAll('.bk-note-icon').forEach(i => i._tip = null);
+        showTip();
+      }
     });
   });
 

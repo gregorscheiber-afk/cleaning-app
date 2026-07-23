@@ -16,7 +16,11 @@ router.post('/apartments/:id/confirm-clean', async (req, res, next) => {
       `INSERT INTO cleanings (apartment_id,cleaner_name,note) VALUES ($1,$2,$3)`,
       [apt.id, cleaner_name, note || null]
     );
-    await pool.query(`DELETE FROM apartment_notes WHERE apartment_id=$1`, [apt.id]);
+    // Nur Putzfrau-Notizen löschen – José-Notizen bleiben, bis der Admin sie entfernt
+    await pool.query(
+      `DELETE FROM apartment_notes WHERE apartment_id=$1 AND (note_type IS NULL OR note_type != 'jose')`,
+      [apt.id]
+    );
     const newStatus = await recomputeStatus(apt.id);
     await notifyApartmentClean(apt, cleaner_name);
     const { rows: updated } = await pool.query(`SELECT * FROM apartments WHERE id=$1`, [apt.id]);

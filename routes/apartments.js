@@ -12,8 +12,14 @@ async function enrichApartments(apts) {
   const { rows: notes } = await pool.query(
     `SELECT * FROM apartment_notes WHERE apartment_id IN (${ph}) ORDER BY created_at ASC`, ids
   );
+  // Notizen trennen: "team" geht an den Putztrupp (offene Ansicht!),
+  // "jose" ist nur für Admin & Planer bestimmt
   const notesMap = {};
-  notes.forEach(n => { (notesMap[n.apartment_id] ??= []).push(n); });
+  const joseMap  = {};
+  notes.forEach(n => {
+    if (n.note_type === 'jose') (joseMap[n.apartment_id] ??= []).push(n);
+    else                        (notesMap[n.apartment_id] ??= []).push(n);
+  });
 
   const { rows: bookings } = await pool.query(
     `SELECT * FROM bookings WHERE apartment_id IN (${ph}) AND "end">$${ids.length+1} ORDER BY start ASC`,
@@ -28,6 +34,7 @@ async function enrichApartments(apts) {
   return apts.map(a => ({
     ...a,
     notes:             notesMap[a.id]    || [],
+    jose_notes:        joseMap[a.id]     || [],
     upcoming_bookings: bookingsMap[a.id] || [],
   }));
 }
