@@ -55,6 +55,7 @@ async function importBookingRows(importRows) {
 
     // Zeilen validieren und nach Apartment gruppieren
     const rowsByApt = new Map(); // aptId → [{start,end,guestName,persons}]
+    let minStart = null; // früheste Anreise in der Datei = Beginn des PMS-Export-Fensters
     for (const row of importRows) {
       const code      = String(row.zimmer    || '').trim().toLowerCase();
       const guestName = String(row.gast      || '').trim() || null;
@@ -82,6 +83,7 @@ async function importBookingRows(importRows) {
 
       if (!rowsByApt.has(apt.id)) rowsByApt.set(apt.id, []);
       rowsByApt.get(apt.id).push({ start, end, guestName, persons });
+      if (!minStart || start < minStart) minStart = start;
       details.push({ zimmer: row.zimmer, apt: apt.name, start, end, status: 'ok' });
     }
 
@@ -110,22 +112,30 @@ async function importBookingRows(importRows) {
         prevNext[aptId] = rows[0]?.d || null;
       }
 
+      // Die PMS-Liste deckt ein rollierendes Zeitfenster ab (ca. 1 Monat
+      // zurück bis 1 Monat voraus). Innerhalb dieses Fensters ist die Liste
+      // die volle Wahrheit → alle Nicht-manuellen Buchungen, die in das
+      // Fenster fallen, werden ersetzt. Was VOR dem Fenster endet, bleibt
+      // als Historie erhalten. Das Fenster bestimmen wir aus der Datei
+      // selbst (früheste Anreise) – schickt das PMS eines Tages nur noch
+      // Zukunftslisten, bleibt die Vergangenheit automatisch verschont.
+      const deleteFrom = minStart || today;
       for (const [aptId, aptRows] of rowsByApt) {
-        // Buchungen ersetzen, die heute oder später enden (außer manuelle).
-        // "heute" ist sicher, weil die PMS-Liste immer ca. einen Monat
-        // Vergangenheit mitliefert – heutige Checkouts stehen also garantiert
-        // in der Liste und werden gleich wieder eingefügt. Früher beendete
-        // Buchungen bleiben als Historie erhalten.
         await client.query(
           `DELETE FROM bookings
            WHERE apartment_id=$1
            AND (source != 'manual' OR source IS NULL)
            AND LEFT("end",10) >= $2`,
-          [aptId, today]
+          [aptId, deleteFrom]
         );
 
         for (const b of aptRows) {
-          const uid = `excel-${aptId}-${b.start}`;
+          // Kennzeichen muss die Buchung EINDEUTIG beschreiben: Es kann zwei
+          // Buchungen mit gleicher Anreise im selben Apartment geben
+          // (z. B. Gruppen-/Splitbuchungen) – daher Anreise + Abreise + Gast.
+          const guestSlug = (b.guestName || '')
+            .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').substring(0, 24);
+          const uid = `excel-${aptId}-${b.start}_${b.end}_${guestSlug}`;
           await client.query(
             `INSERT INTO bookings (apartment_id, uid, start, "end", guest_name, persons, source)
              VALUES ($1, $2, $3, $4, $5, $6, 'excel')

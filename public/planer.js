@@ -203,6 +203,8 @@ function renderPlan(data, from, days) {
     const color = COLORS[ci++ % COLORS.length];
     house.apts.forEach(apt => {
       const aptNotes = apt.notes || [];
+      // Bereits gezeichnete Balken dieser Zeile (für Überlappungs-Stapelung)
+      const placed = [];
       // Notiz gilt nur für die nächste kommende Buchung (erste Buchung ab heute)
       const todayISO = new Date().toISOString().substring(0,10);
       const nextBooking = apt.bookings
@@ -230,17 +232,38 @@ function renderPlan(data, from, days) {
         if (!cell) return;
 
         // Mitte-zu-Mitte Positionierung:
-        // Block startet in der Mitte des Anreisetages, endet in der Mitte des Abreisetages
+        // Block startet in der Mitte des Anreisetages, endet in der Mitte des
+        // Abreisetages. WICHTIG: echte Zellbreiten messen – der Browser kann
+        // die Tabelle strecken, dann stimmt die feste Spaltenbreite COL_W
+        // nicht mehr und Balken würden zu kurz gezeichnet.
+        const rowEl = cell.parentElement;
         const startsBeforeView = bStart < dates[0];
         const endsAfterView   = ei >= days;
-        const leftOffset  = startsBeforeView ? 0 : Math.floor(COL_W / 2);
-        const rightOffset = endsAfterView    ? 0 : Math.floor(COL_W / 2);
-        const blockWidth  = span * COL_W - leftOffset + rightOffset - 2;
+        const endCell = endsAfterView
+          ? rowEl.querySelector(`[data-date="${dates[days-1]}"]`)
+          : rowEl.querySelector(`[data-date="${dates[ei]}"]`);
+        const leftOffset = startsBeforeView ? 0 : Math.round(cell.offsetWidth / 2);
+        const endX = endCell
+          ? (endCell.offsetLeft - cell.offsetLeft) +
+            (endsAfterView ? endCell.offsetWidth : Math.round(endCell.offsetWidth / 2))
+          : span * COL_W;
+        const blockWidth = endX - leftOffset - 2;
 
         const block = document.createElement('div');
         block.className = `bk ${color}`;
         block.style.left  = `${leftOffset + 1}px`;
         block.style.width = `${Math.max(blockWidth, 10)}px`;
+
+        // Überlappende Buchungen (z. B. zwei Gäste im selben Apartment)
+        // übereinander stapeln statt verdecken
+        const absStart = cell.offsetLeft + leftOffset;
+        const absEnd   = absStart + blockWidth;
+        const overlapping = placed.filter(p => p.absStart < absEnd && absStart < p.absEnd);
+        if (overlapping.length) {
+          overlapping.forEach(p => p.el.classList.add('bk-upper'));
+          block.classList.add('bk-lower');
+        }
+        placed.push({ absStart, absEnd, el: block });
         const fmtDE = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.${y}`; };
         block.title = `${b.guest_name||''} · ${b.persons||''} · ${fmtDE(bStart)} → ${fmtDE(bEnd)}`;
         const showNote = isNextBooking && aptNotes.length > 0;
