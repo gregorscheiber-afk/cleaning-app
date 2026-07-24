@@ -81,6 +81,18 @@ async function initDb() {
       interim_clean TEXT,
       UNIQUE(apartment_id, start)
     );
+
+    -- Tages-Einteilung: welche Apartments sollen an welchem Tag geputzt werden.
+    -- Anker = Apartment + Datum (überlebt so den Excel-Import). Die Auswahl
+    -- ist unabhängig vom Belegt-Status – man kann also 2-3 Tage im Voraus
+    -- einteilen, auch wenn gerade noch ein Gast da ist.
+    CREATE TABLE IF NOT EXISTS cleaning_assignments (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      date         TEXT NOT NULL,
+      created_at   TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(apartment_id, date)
+    );
   `);
 
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);

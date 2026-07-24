@@ -8,6 +8,9 @@ const cleanerPlan = new URLSearchParams(window.location.search).get('plan');
 let selectedHouse = null;
 let activeFilter  = 'all';
 let allApartments = [];
+let viewMode      = 'houses'; // 'houses' | 'house' | 'assignment'
+
+function todayISO() { return new Date().toISOString().substring(0, 10); }
 
 function applyLabels() {
   document.getElementById('lbl-role').textContent  = t('roleClean');
@@ -68,15 +71,43 @@ function renderBookings(bookings) {
 
 // ── Hausauswahl ──────────────────────────────────────────
 async function showHouseScreen() {
+  viewMode = 'houses';
   document.getElementById('house-overlay')?.remove();
+  document.getElementById('house-header')?.remove();
+  document.getElementById('status-filter')?.remove();
+  listEl.innerHTML = '';
+  document.getElementById('lbl-section').textContent = '';
+
   let houses = [];
+  let assigned = [];
   try {
-    const url = '/api/houses' + (cleanerPlan ? `?plan=${encodeURIComponent(cleanerPlan)}` : '');
-    houses = await (await fetch(url)).json();
+    const houseUrl = '/api/houses' + (cleanerPlan ? `?plan=${encodeURIComponent(cleanerPlan)}` : '');
+    const asgUrl   = `/api/apartments?assigned_date=${todayISO()}` + (cleanerPlan ? `&plan=${encodeURIComponent(cleanerPlan)}` : '');
+    [houses, assigned] = await Promise.all([
+      (await fetch(houseUrl)).json(),
+      (await fetch(asgUrl)).json().catch(() => []),
+    ]);
   } catch {}
 
   const overlay = document.createElement('div');
   overlay.id = 'house-overlay';
+
+  // Einteilungs-Karte nur zeigen, wenn für heute etwas eingeteilt wurde
+  const needsCount = (assigned || []).filter(a => a.status === 'muss_geputzt_werden').length;
+  const assignmentCard = (assigned && assigned.length)
+    ? `<button class="house-card assignment-card" id="assignment-card">
+         <div class="house-card-icon">🧹</div>
+         <div class="house-card-body">
+           <div class="house-card-name">${t('assignmentTitle')}</div>
+           <div class="house-card-meta">
+             <span class="house-pill all">${t('aptCount', assigned.length)}</span>
+             ${needsCount > 0 ? `<span class="house-pill needs">${t('needsCleaning', needsCount)}</span>` : ''}
+           </div>
+         </div>
+         <div class="house-card-arrow">›</div>
+       </button>`
+    : '';
+
   const cards = houses.length
     ? houses.map(h => `
         <button class="house-card" data-id="${h.id}" data-name="${esc(h.name)}">
@@ -99,11 +130,16 @@ async function showHouseScreen() {
         <div class="house-screen-title">${t('selectHouse')}</div>
         <div class="house-screen-hint">${t('selectHouseHint')}</div>
       </div>
-      <div class="house-card-list">${cards}</div>
+      <div class="house-card-list">${assignmentCard}${cards}</div>
     </div>`;
   document.body.appendChild(overlay);
 
-  overlay.querySelectorAll('.house-card').forEach(btn => {
+  document.getElementById('assignment-card')?.addEventListener('click', () => {
+    overlay.classList.add('fade-out');
+    setTimeout(() => { overlay.remove(); showAssignmentHeader(); loadAssignment(); }, 220);
+  });
+
+  overlay.querySelectorAll('.house-card:not(.assignment-card)').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedHouse = { id: btn.dataset.id, name: btn.dataset.name };
       overlay.classList.add('fade-out');
@@ -112,7 +148,37 @@ async function showHouseScreen() {
   });
 }
 
+// ── Einteilungs-Ansicht (hausübergreifend, nur für heute) ─────────
+function showAssignmentHeader() {
+  viewMode = 'assignment';
+  document.getElementById('house-header')?.remove();
+  const el = document.createElement('div');
+  el.id = 'house-header';
+  el.innerHTML = `
+    <button class="btn-back" id="btn-back-houses">${t('assignmentBack')}</button>
+    <div class="current-house-label">🧹 <span>${t('assignmentTitle')}</span></div>`;
+  document.querySelector('main').insertBefore(el, document.querySelector('main').firstChild);
+  document.getElementById('btn-back-houses').addEventListener('click', () => {
+    listEl.innerHTML = '';
+    document.getElementById('lbl-section').textContent = '';
+    showHouseScreen();
+  });
+  document.getElementById('lbl-section').textContent = t('sectionTodo');
+}
+
+async function loadAssignment() {
+  try {
+    const url = `/api/apartments?assigned_date=${todayISO()}` + (cleanerPlan ? `&plan=${encodeURIComponent(cleanerPlan)}` : '');
+    allApartments = await (await fetch(url)).json();
+    document.getElementById('status-filter')?.remove(); // keine Filter-Tabs hier
+    render(allApartments, true); // mit Hausname
+  } catch {
+    listEl.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>${t('connError')}</p></div>`;
+  }
+}
+
 function showHouseHeader() {
+  viewMode = 'house';
   document.getElementById('house-header')?.remove();
   const el = document.createElement('div');
   el.id = 'house-header';
@@ -155,6 +221,12 @@ function showFilterTabs() {
   });
 }
 
+// Lädt die gerade sichtbare Ansicht neu (Haus-Liste oder Einteilung)
+function reloadCurrent() {
+  if (viewMode === 'assignment') loadAssignment();
+  else if (viewMode === 'house') loadApartments();
+}
+
 async function loadApartments() {
   if (!selectedHouse) return;
   try {
@@ -173,7 +245,7 @@ function renderFiltered() {
   render(filtered);
 }
 
-function render(apartments) {
+function render(apartments, showHouse) {
   if (!apartments.length) {
     listEl.innerHTML = `
       <div class="empty-state">
@@ -194,6 +266,7 @@ function render(apartments) {
       <div class="apt-card" style="flex-wrap:wrap;gap:.6rem">
         <div class="apt-card-top">
           <div class="apt-card-left" style="flex:1;min-width:0">
+            ${showHouse && apt.house_name ? `<div style="font-size:.7rem;color:var(--accent);font-weight:700;letter-spacing:.04em;margin-bottom:.15rem">🏠 ${esc(apt.house_name)}</div>` : ''}
             <div class="apt-name">${esc(apt.name)}</div>
             <div style="margin-top:.3rem">
               <span class="badge ${apt.status}">${statusLabel(apt.status)}</span>
@@ -302,7 +375,7 @@ function openConfirmSheet(aptId, aptName, apt) {
         overlay.classList.add('closing');
         setTimeout(() => overlay.remove(), 220);
         showToast(t('toastConfirmed'));
-        loadApartments();
+        reloadCurrent();
       } catch {
         showToast(t('toastError'));
         document.getElementById('btn-confirm-all').disabled = false;
@@ -344,5 +417,5 @@ document.getElementById('btn-lang').addEventListener('click', () => {
 initLangScreen(() => {
   applyLabels();
   showHouseScreen();
-  setInterval(() => { if (selectedHouse) loadApartments(); }, 20000);
+  setInterval(reloadCurrent, 20000);
 });

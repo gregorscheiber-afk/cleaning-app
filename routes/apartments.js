@@ -52,12 +52,31 @@ async function enrichApartments(apts) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const { status, house_id } = req.query;
-    let sql = `SELECT * FROM apartments WHERE 1=1`;
+    const { status, house_id, assigned_date, plan } = req.query;
+    // house_name mitliefern, damit die Reinigungsansicht bei der
+    // hausübergreifenden Einteilung anzeigen kann, wo das Apartment liegt
+    let sql = `SELECT a.*, h.name AS house_name
+               FROM apartments a
+               LEFT JOIN houses h ON h.id = a.house_id
+               WHERE 1=1`;
     const params = [];
-    if (status)   { params.push(status);   sql += ` AND status=$${params.length}`; }
-    if (house_id) { params.push(house_id); sql += ` AND house_id=$${params.length}`; }
-    sql += ` ORDER BY name`;
+    if (status)   { params.push(status);   sql += ` AND a.status=$${params.length}`; }
+    if (house_id) { params.push(house_id); sql += ` AND a.house_id=$${params.length}`; }
+
+    // Nur Apartments, die für diesen Tag zum Reinigen eingeteilt sind
+    if (assigned_date) {
+      params.push(assigned_date);
+      sql += ` AND a.id IN (SELECT apartment_id FROM cleaning_assignments WHERE date=$${params.length})`;
+    }
+
+    // Plan-Filter (wie im Planer): mainstreet = White Pearl/Cecilia, wiwa = Rest
+    if (plan === 'mainstreet') {
+      sql += ` AND (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
+    } else if (plan === 'wiwa') {
+      sql += ` AND (h.name IS NULL OR NOT (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%'))`;
+    }
+
+    sql += ` ORDER BY h.name, a.name`;
     const { rows } = await pool.query(sql, params);
     res.json(await enrichApartments(rows));
   } catch(e) { next(e); }

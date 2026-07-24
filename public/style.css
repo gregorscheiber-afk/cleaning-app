@@ -660,6 +660,15 @@ main {
   background: var(--surface-2);
 }
 
+/* Einteilungs-Karte hebt sich von den Haus-Karten ab */
+.house-card.assignment-card {
+  border-color: var(--putzen);
+  background: rgba(217,107,60,.08);
+}
+.house-card.assignment-card:hover {
+  background: rgba(217,107,60,.14);
+}
+
 .house-card-icon {
   width: 42px;
   height: 42px;

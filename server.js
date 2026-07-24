@@ -21,6 +21,7 @@ const importRouter      = require('./routes/import');
 const bookingsRouter    = require('./routes/bookings');
 const planRouter        = require('./routes/plan');
 const authRouter        = require('./routes/auth');
+const assignmentsRouter = require('./routes/assignments');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +37,7 @@ app.use('/api',            importRouter);
 app.use('/api',            bookingsRouter);
 app.use('/api',            planRouter);
 app.use('/api',            authRouter);
+app.use('/api',            assignmentsRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/test-db', async (_req, res) => {
   try {

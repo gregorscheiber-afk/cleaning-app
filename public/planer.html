@@ -291,6 +291,38 @@ html, body { height: 100%; overflow: hidden; }
   padding: 3rem;
   color: var(--ink-muted);
 }
+
+/* Einteilungs-Punkt (Reinigung an einem Tag ein-/ausschalten) */
+.assign-dot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-muted);
+  background: var(--surface);
+  opacity: .22;
+  cursor: pointer;
+  z-index: 6;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .62rem;
+  line-height: 1;
+  color: #fff;
+  transition: opacity .12s, background .12s;
+}
+.td-day:hover .assign-dot { opacity: .6; }
+.assign-dot.assigned {
+  opacity: 1;
+  background: var(--putzen);
+  border-color: var(--putzen);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.15);
+}
+.assign-dot.assigned::after { content: '🧹'; font-size: .55rem; }
 </style>
 </head>
 <body>

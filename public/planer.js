@@ -73,14 +73,21 @@ async function loadPlan() {
   try {
     let url = `/api/plan?from=${from}&days=${days}&plan=${planType}`;
     if (houseId && !isMainstreet) url += `&house_id=${houseId}`;
-    const res  = await fetch(url);
-    const data = await res.json();
+    const to = addDays(from, days - 1);
+    const [data, assignments] = await Promise.all([
+      (await fetch(url)).json(),
+      (await fetch(`/api/assignments?from=${from}&to=${to}`)).json().catch(() => []),
+    ]);
+    assignedSet = new Set((assignments || []).map(a => `${a.apartment_id}|${a.date}`));
     await loadHouses(data);
     renderPlan(data, from, days);
   } catch(e) {
     scrollEl.innerHTML = `<div class="planer-empty">Fehler: ${e.message}</div>`;
   }
 }
+
+// Eingeteilte Reinigungen (Apartment|Datum) des aktuell sichtbaren Zeitraums
+let assignedSet = new Set();
 
 function renderPlan(data, from, days) {
   const apartments = data.apartments || [];
@@ -188,7 +195,14 @@ function renderPlan(data, from, days) {
           d === todayStr ? 'is-today' : '',
           checkoutDays.has(d) ? 'is-checkout' : '',
         ].filter(Boolean).join(' ');
-        html += `<td class="${cls}" data-apt="${apt.id}" data-date="${d}"></td>`;
+        // Einteilungs-Punkt nur für heute und die Zukunft (Vergangenheit
+        // lässt sich nicht mehr sinnvoll einteilen)
+        const canAssign = d >= todayStr;
+        const isAssigned = assignedSet.has(`${apt.id}|${d}`);
+        const dot = canAssign
+          ? `<button class="assign-dot${isAssigned ? ' assigned' : ''}" data-assign-apt="${apt.id}" data-assign-date="${d}" title="Zur Reinigung einteilen (${d})"></button>`
+          : '';
+        html += `<td class="${cls}" data-apt="${apt.id}" data-date="${d}">${dot}</td>`;
       });
 
       html += `</tr>`;
@@ -421,5 +435,30 @@ document.addEventListener('click', (e) => {
   if (!e.target.classList || !e.target.classList.contains('bk-note-icon')) {
     document.querySelectorAll('.note-tooltip-float').forEach(t => t.remove());
     document.querySelectorAll('.bk-note-icon').forEach(i => i._tip = null);
+  }
+});
+
+// Einteilung: Klick auf einen Einteilungs-Punkt schaltet an/aus (delegiert,
+// überlebt so das Neuzeichnen des Plans)
+scrollEl.addEventListener('click', async (e) => {
+  const dot = e.target.closest('.assign-dot');
+  if (!dot) return;
+  e.stopPropagation();
+  const aptId = dot.dataset.assignApt;
+  const date  = dot.dataset.assignDate;
+  const willAssign = !dot.classList.contains('assigned');
+  dot.classList.toggle('assigned', willAssign); // sofort sichtbar
+  dot.disabled = true;
+  try {
+    const res = await fetch('/api/assignments', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apartment_id: Number(aptId), date, assigned: willAssign }),
+    });
+    if (!res.ok) throw new Error();
+    assignedSet[willAssign ? 'add' : 'delete'](`${aptId}|${date}`);
+  } catch {
+    dot.classList.toggle('assigned', !willAssign); // zurücksetzen bei Fehler
+  } finally {
+    dot.disabled = false;
   }
 });
