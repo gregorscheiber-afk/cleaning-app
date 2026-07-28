@@ -59,6 +59,8 @@ router.get('/plan', async (req, res, next) => {
         const svc = svcMap[`${b.apartment_id}|${String(b.start).substring(0,10)}`];
         b.breakfast     = svc?.breakfast     || null;
         b.interim_clean = svc?.interim_clean || null;
+        b.baby_cot      = svc?.baby_cot      || null;
+        b.high_chair    = svc?.high_chair    || null;
       });
     }
 

@@ -37,15 +37,17 @@ router.post('/apartments/:id/bookings', requireAdmin, async (req, res, next) => 
   } catch(e) { next(e); }
 });
 
-// PUT /api/bookings/:id/services – Zusatzleistungen setzen (José/Cecilia)
-// Body: { breakfast: 'ja'|'nein'|null, interim_clean: 'ja'|'nein'|null }
-// Gespeichert wird pro Apartment + Anreisedatum, damit die Angaben den
-// stündlichen Excel-Import überleben.
+// PUT /api/bookings/:id/services – Zusatzleistungen pro Buchung setzen.
+// Body kann eine beliebige Teilmenge enthalten:
+//   breakfast / interim_clean  (nur Cecilia) und baby_cot / high_chair (alle)
+// jeweils 'ja' | 'nein' | null. Nur die ÜBERGEBENEN Felder werden geändert,
+// die übrigen bleiben erhalten (damit ein Schalter die anderen nicht löscht).
+// Gespeichert pro Apartment + Anreisedatum, überlebt so den Excel-Import.
 router.put('/bookings/:id/services', requireAdmin, async (req, res, next) => {
   try {
     const norm = v => (v === 'ja' || v === 'nein') ? v : null;
-    const breakfast     = norm((req.body || {}).breakfast);
-    const interim_clean = norm((req.body || {}).interim_clean);
+    const body = req.body || {};
+    const FIELDS = ['breakfast', 'interim_clean', 'baby_cot', 'high_chair'];
 
     const { rows } = await pool.query(
       `SELECT apartment_id, LEFT(start,10) as sd FROM bookings WHERE id=$1`,
@@ -54,13 +56,23 @@ router.put('/bookings/:id/services', requireAdmin, async (req, res, next) => {
     if (!rows.length) return res.status(404).json({ error: 'Buchung nicht gefunden' });
     const { apartment_id, sd } = rows[0];
 
+    // Bestehende Werte laden und die übergebenen Felder darüberlegen
+    const { rows: existing } = await pool.query(
+      `SELECT * FROM booking_services WHERE apartment_id=$1 AND start=$2`,
+      [apartment_id, sd]
+    );
+    const cur = existing[0] || {};
+    const merged = {};
+    for (const f of FIELDS) merged[f] = (f in body) ? norm(body[f]) : (cur[f] ?? null);
+
     const { rows: saved } = await pool.query(
-      `INSERT INTO booking_services (apartment_id, start, breakfast, interim_clean)
-       VALUES ($1,$2,$3,$4)
+      `INSERT INTO booking_services (apartment_id, start, breakfast, interim_clean, baby_cot, high_chair)
+       VALUES ($1,$2,$3,$4,$5,$6)
        ON CONFLICT (apartment_id, start) DO UPDATE
-         SET breakfast=EXCLUDED.breakfast, interim_clean=EXCLUDED.interim_clean
+         SET breakfast=EXCLUDED.breakfast, interim_clean=EXCLUDED.interim_clean,
+             baby_cot=EXCLUDED.baby_cot, high_chair=EXCLUDED.high_chair
        RETURNING *`,
-      [apartment_id, sd, breakfast, interim_clean]
+      [apartment_id, sd, merged.breakfast, merged.interim_clean, merged.baby_cot, merged.high_chair]
     );
     res.json(saved[0]);
   } catch(e) { next(e); }

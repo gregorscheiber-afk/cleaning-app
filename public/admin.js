@@ -150,23 +150,30 @@ function parsePersons(persons) {
   return { adults: Number(a), children: Number(k), babies: Number(b) };
 }
 
-// Schalter für Zusatzleistungen (nur Cecilia): – / mit / ohne
-function renderServiceToggles(b) {
+// Schalter für Zusatzleistungen pro Buchung: mit / ohne
+// Kinderbett & Hochstuhl bei ALLEN Apartments; Frühstück & Zwischenreinigung
+// zusätzlich nur bei Cecilia.
+function renderServiceToggles(b, isCecilia) {
   const btn = (field, val, label, active) => `
     <button class="btn-sync" data-svc="${b.id}" data-field="${field}" data-val="${val}"
       style="${active ? 'background:var(--accent);color:#111;border-color:var(--accent);font-weight:700;' : ''}">${label}</button>`;
+  const group = (icon, labelText, field, cur) => `
+      <span class="persons-label" style="margin-left:.7rem">${icon} ${labelText}:</span>
+      ${btn(field, 'ja', 'mit', cur === 'ja')}
+      ${btn(field, 'nein', 'ohne', cur === 'nein')}`;
   return `
-    <div class="persons-editor" data-svc-wrap data-bf="${b.breakfast || ''}" data-ic="${b.interim_clean || ''}" style="margin-top:.35rem;flex-wrap:wrap">
-      <span class="persons-label">🥐 Frühstück:</span>
-      ${btn('breakfast', 'ja', 'mit', b.breakfast === 'ja')}
-      ${btn('breakfast', 'nein', 'ohne', b.breakfast === 'nein')}
-      <span class="persons-label" style="margin-left:.7rem">🧹 Zwischenreinigung:</span>
-      ${btn('interim_clean', 'ja', 'mit', b.interim_clean === 'ja')}
-      ${btn('interim_clean', 'nein', 'ohne', b.interim_clean === 'nein')}
+    <div class="persons-editor" data-svc-wrap
+         data-bc="${b.baby_cot || ''}" data-hc="${b.high_chair || ''}"
+         data-bf="${b.breakfast || ''}" data-ic="${b.interim_clean || ''}"
+         style="margin-top:.35rem;flex-wrap:wrap">
+      ${group('🛏️', 'Kinderbett', 'baby_cot', b.baby_cot).replace('margin-left:.7rem', '')}
+      ${group('🪑', 'Hochstuhl', 'high_chair', b.high_chair)}
+      ${isCecilia ? group('🥐', 'Frühstück', 'breakfast', b.breakfast) : ''}
+      ${isCecilia ? group('🧹', 'Zwischenreinigung', 'interim_clean', b.interim_clean) : ''}
     </div>`;
 }
 
-function renderAdminBookings(bookings, showServices) {
+function renderAdminBookings(bookings, isCecilia) {
   if (!bookings?.length) return `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noUpcoming')}</div>`;
   return bookings.map(b => {
     const p = parsePersons(b.persons);
@@ -208,7 +215,7 @@ function renderAdminBookings(bookings, showServices) {
         </div>
         <button class="persons-save-btn" data-save-booking="${b.id}">✓</button>
       </div>
-      ${showServices ? renderServiceToggles(b) : ''}
+      ${renderServiceToggles(b, isCecilia)}
     </div>`;
   }).join('');
 }
@@ -672,22 +679,22 @@ function renderHouseApts(houseId) {
     if (isCeciliaApt(apt)) attachJoseNoteHandlers(apt);
   });
 
-  // Zusatzleistungs-Schalter (Frühstück/Zwischenreinigung, nur Cecilia)
+  // Zusatzleistungs-Schalter (Kinderbett/Hochstuhl bei allen, Frühstück/
+  // Zwischenreinigung nur bei Cecilia). Es wird nur das geklickte Feld
+  // gesendet – der Server lässt die übrigen unangetastet.
+  const svcKey = { baby_cot: 'bc', high_chair: 'hc', breakfast: 'bf', interim_clean: 'ic' };
   container.querySelectorAll('[data-svc]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const wrap = btn.closest('[data-svc-wrap]');
-      const cur = {
-        breakfast:     wrap.dataset.bf || null,
-        interim_clean: wrap.dataset.ic || null,
-      };
       const field = btn.dataset.field;
+      const currentVal = wrap.dataset[svcKey[field]] || null;
       // Nochmal auf den aktiven Wert klicken = Angabe entfernen
-      cur[field] = (cur[field] === btn.dataset.val) ? null : btn.dataset.val;
+      const newVal = (currentVal === btn.dataset.val) ? null : btn.dataset.val;
       btn.disabled = true;
       try {
         await fetch(`/api/bookings/${btn.dataset.svc}/services`, {
           method: 'PUT', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(cur),
+          body: JSON.stringify({ [field]: newVal }),
         });
         showToast(t('toastSaved'));
         loadApartments();

@@ -79,6 +79,8 @@ async function initDb() {
       start         TEXT NOT NULL,
       breakfast     TEXT,
       interim_clean TEXT,
+      baby_cot      TEXT,
+      high_chair    TEXT,
       UNIQUE(apartment_id, start)
     );
   `);
@@ -90,6 +92,8 @@ async function initDb() {
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS source            TEXT DEFAULT 'ical'`);
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS guest_name        TEXT`);
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS highlighted_until TEXT`);
+  await pool.query(`ALTER TABLE booking_services ADD COLUMN IF NOT EXISTS baby_cot   TEXT`);
+  await pool.query(`ALTER TABLE booking_services ADD COLUMN IF NOT EXISTS high_chair TEXT`);
 
   console.log('Datenbank bereit.');
 }

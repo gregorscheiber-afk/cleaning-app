@@ -38,6 +38,8 @@ async function enrichApartments(apts) {
     const svc = svcMap[`${b.apartment_id}|${String(b.start).substring(0,10)}`];
     b.breakfast     = svc?.breakfast     || null;
     b.interim_clean = svc?.interim_clean || null;
+    b.baby_cot      = svc?.baby_cot      || null;
+    b.high_chair    = svc?.high_chair    || null;
     if (!bookingsMap[b.apartment_id]) bookingsMap[b.apartment_id] = [];
     if (bookingsMap[b.apartment_id].length < 2) bookingsMap[b.apartment_id].push(b);
   });

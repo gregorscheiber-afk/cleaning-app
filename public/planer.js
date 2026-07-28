@@ -266,12 +266,17 @@ function renderPlan(data, from, days) {
         }
         placed.push({ absStart, absEnd, el: block });
         const fmtDE = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.${y}`; };
-        // Zusatzleistungen (Frühstück/Zwischenreinigung) – Info für José
+        // Zusatzleistungen auf dem Balken: Kinderbett/Hochstuhl (alle),
+        // Frühstück/Zwischenreinigung (nur Cecilia). ✓ = mit, ✗ = ohne
         const svcTitle =
+          (b.baby_cot      ? ` · Kinderbett: ${b.baby_cot === 'ja' ? 'ja' : 'nein'}` : '') +
+          (b.high_chair    ? ` · Hochstuhl: ${b.high_chair === 'ja' ? 'ja' : 'nein'}` : '') +
           (b.breakfast     ? ` · Frühstück: ${b.breakfast === 'ja' ? 'mit' : 'ohne'}` : '') +
           (b.interim_clean ? ` · Zwischenreinigung: ${b.interim_clean === 'ja' ? 'mit' : 'ohne'}` : '');
         block.title = `${b.guest_name||''} · ${b.persons||''} · ${fmtDE(bStart)} → ${fmtDE(bEnd)}${svcTitle}`;
         const svcBadges =
+          (b.baby_cot      ? `<span class="bk-svc">🛏️${b.baby_cot === 'ja' ? '✓' : '✗'}</span>` : '') +
+          (b.high_chair    ? `<span class="bk-svc">🪑${b.high_chair === 'ja' ? '✓' : '✗'}</span>` : '') +
           (b.breakfast     ? `<span class="bk-svc">🥐${b.breakfast === 'ja' ? '✓' : '✗'}</span>` : '') +
           (b.interim_clean ? `<span class="bk-svc">🧹${b.interim_clean === 'ja' ? '✓' : '✗'}</span>` : '');
         const showNote = isNextBooking && aptNotes.length > 0;
