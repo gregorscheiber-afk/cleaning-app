@@ -4,29 +4,31 @@
    ====================================================== */
 
 :root {
-  --bg:           #111512;
-  --surface:      #1a1e1a;
-  --surface-2:    #222722;
-  --surface-3:    #2a302a;
-  --ink:          #f0ede8;
-  --ink-soft:     #8a9488;
-  --ink-muted:    #5a6358;
-  --line:         #2c322c;
-  --accent:       #c8963a;
-  --accent-hover: #daa84e;
-  --accent-dim:   rgba(200, 150, 58, 0.15);
+  /* Kontrastreicheres Dark-Theme: tieferer Grund, hellere Flächen &
+     Texte, klar sichtbare Linien */
+  --bg:           #0b0e0b;
+  --surface:      #181d18;
+  --surface-2:    #232a23;
+  --surface-3:    #313931;
+  --ink:          #f7f5f1;
+  --ink-soft:     #bcc5ba;
+  --ink-muted:    #8b968a;
+  --line:         #3e463e;
+  --accent:       #e0ab4d;
+  --accent-hover: #f0bd60;
+  --accent-dim:   rgba(224, 171, 77, 0.20);
 
-  --belegt:       #4a8fd4;
-  --belegt-bg:    rgba(74, 143, 212, 0.12);
-  --putzen:       #d96b3c;
-  --putzen-bg:    rgba(217, 107, 60, 0.12);
-  --sauber:       #4caf7d;
-  --sauber-bg:    rgba(76, 175, 125, 0.12);
+  --belegt:       #5ea6ec;
+  --belegt-bg:    rgba(94, 166, 236, 0.20);
+  --putzen:       #f2814a;
+  --putzen-bg:    rgba(242, 129, 74, 0.20);
+  --sauber:       #56cf8d;
+  --sauber-bg:    rgba(86, 207, 141, 0.20);
 
   --radius:       12px;
   --radius-sm:    8px;
-  --shadow:       0 4px 24px rgba(0,0,0,.45);
-  --shadow-sm:    0 2px 8px rgba(0,0,0,.3);
+  --shadow:       0 4px 24px rgba(0,0,0,.55);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,.4);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -266,9 +268,9 @@ main {
   text-transform: uppercase;
 }
 
-.badge.belegt { background: var(--belegt-bg); color: var(--belegt); }
-.badge.muss_geputzt_werden { background: var(--putzen-bg); color: var(--putzen); }
-.badge.sauber { background: var(--sauber-bg); color: var(--sauber); }
+.badge.belegt { background: var(--belegt-bg); color: var(--belegt); border: 1px solid var(--belegt); }
+.badge.muss_geputzt_werden { background: var(--putzen-bg); color: var(--putzen); border: 1px solid var(--putzen); }
+.badge.sauber { background: var(--sauber-bg); color: var(--sauber); border: 1px solid var(--sauber); }
 
 /* ── Admin: summary stats ── */
 .stats-row {
