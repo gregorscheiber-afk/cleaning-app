@@ -4,31 +4,33 @@
    ====================================================== */
 
 :root {
-  /* Kontrastreicheres Dark-Theme: tieferer Grund, hellere Flächen &
-     Texte, klar sichtbare Linien */
-  --bg:           #0b0e0b;
-  --surface:      #181d18;
-  --surface-2:    #232a23;
-  --surface-3:    #313931;
-  --ink:          #f7f5f1;
-  --ink-soft:     #bcc5ba;
-  --ink-muted:    #8b968a;
-  --line:         #3e463e;
-  --accent:       #e0ab4d;
-  --accent-hover: #f0bd60;
-  --accent-dim:   rgba(224, 171, 77, 0.20);
+  /* Helles, kontrastreiches Theme: weiße Karten auf hellem Grund,
+     dunkle Schrift, dunkleres Gold (auf Weiß lesbar), kräftige
+     Statusfarben. --on-accent = Textfarbe auf Gold-Buttons. */
+  --bg:           #f2f4f0;
+  --surface:      #ffffff;
+  --surface-2:    #eef1ec;
+  --surface-3:    #e3e7e0;
+  --ink:          #1a201a;
+  --ink-soft:     #4c554b;
+  --ink-muted:    #6f786d;
+  --line:         #cfd5cc;
+  --accent:       #9a6a14;
+  --accent-hover: #815810;
+  --accent-dim:   rgba(154, 106, 20, 0.12);
+  --on-accent:    #ffffff;
 
-  --belegt:       #5ea6ec;
-  --belegt-bg:    rgba(94, 166, 236, 0.20);
-  --putzen:       #f2814a;
-  --putzen-bg:    rgba(242, 129, 74, 0.20);
-  --sauber:       #56cf8d;
-  --sauber-bg:    rgba(86, 207, 141, 0.20);
+  --belegt:       #205fa6;
+  --belegt-bg:    rgba(32, 95, 166, 0.12);
+  --putzen:       #bf420b;
+  --putzen-bg:    rgba(191, 66, 11, 0.12);
+  --sauber:       #1c7f45;
+  --sauber-bg:    rgba(28, 127, 69, 0.12);
 
   --radius:       12px;
   --radius-sm:    8px;
-  --shadow:       0 4px 24px rgba(0,0,0,.55);
-  --shadow-sm:    0 2px 8px rgba(0,0,0,.4);
+  --shadow:       0 6px 24px rgba(20,30,20,.10);
+  --shadow-sm:    0 1px 3px rgba(20,30,20,.08);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -238,7 +240,7 @@ main {
 /* ── Confirm button ── */
 .btn-confirm {
   background: var(--accent);
-  color: #111;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius-sm);
   padding: .8rem 1.1rem;
@@ -440,7 +442,7 @@ main {
 
 .btn-primary {
   background: var(--accent);
-  color: #111;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius-sm);
   padding: .75rem 1rem;
@@ -864,7 +866,7 @@ main {
 
 .note-add-btn {
   background: var(--accent);
-  color: #111;
+  color: var(--on-accent);
   border: none;
   border-radius: 8px;
   padding: .55rem .85rem;
@@ -947,7 +949,7 @@ main {
 }
 
 .status-tab:hover { border-color: var(--accent); color: var(--ink); }
-.status-tab.active { background: var(--accent); border-color: var(--accent); color: #111; }
+.status-tab.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 /* Apt-card mit Status (Putzfrau neue Ansicht) */
 .apt-card-top {
@@ -1218,7 +1220,7 @@ main {
   transition: all .14s;
 }
 
-.btn-edit:hover { background: var(--accent); color: #111; }
+.btn-edit:hover { background: var(--accent); color: var(--on-accent); }
 
 /* ── Personen-Editor in Admin-Buchungszeile ── */
 .persons-editor {
@@ -1264,7 +1266,7 @@ main {
 
 .persons-save-btn {
   background: var(--accent);
-  color: #111;
+  color: var(--on-accent);
   border: none;
   border-radius: 6px;
   padding: .3rem .65rem;
@@ -1370,7 +1372,7 @@ main {
   white-space: nowrap;
 }
 
-.btn-manual-add:hover { background: var(--accent); color: #111; }
+.btn-manual-add:hover { background: var(--accent); color: var(--on-accent); }
 
 .btn-del-booking {
   background: none;
@@ -1444,7 +1446,7 @@ main {
 
 .pin-btn {
   background: var(--accent);
-  color: #111;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius);
   width: 52px;
@@ -1472,40 +1474,40 @@ main {
 
 /* ── Verwaltungs-Panels (heller hervorgehoben) ── */
 .panel-mgmt {
-  background: #242b24;
-  border-color: #363e36;
+  background: var(--surface-2);
+  border-color: var(--line);
 }
 
 .panel-mgmt .panel-header {
-  background: #2a322a;
-  border-bottom-color: #363e36;
+  background: var(--surface-3);
+  border-bottom-color: var(--line);
 }
 
 .panel-mgmt .panel-title {
-  color: #a0b09a;
+  color: var(--ink-soft);
 }
 
 .panel-mgmt .apt-table {
-  background: #242b24;
+  background: var(--surface-2);
 }
 
 .panel-mgmt .apt-table th {
-  background: #2a322a;
-  color: #7a8a74;
+  background: var(--surface-3);
+  color: var(--ink-muted);
 }
 
 .panel-mgmt .apt-table tr:hover td {
-  background: #2a322a;
+  background: var(--surface-3);
 }
 
 .panel-mgmt .add-form input,
 .panel-mgmt .add-form select {
-  background: #2a322a;
-  border-color: #363e36;
+  background: var(--surface-3);
+  border-color: var(--line);
 }
 
 .panel-mgmt .import-hint {
-  color: #7a8a74;
+  color: var(--ink-muted);
 }
 
 /* ── Reinigungsalarm Banner ── */

@@ -163,7 +163,7 @@ function svcCount(v) {
 function renderServiceToggles(b, isCecilia) {
   const btn = (field, val, label, active) => `
     <button class="btn-sync" data-svc="${b.id}" data-field="${field}" data-val="${val}"
-      style="${active ? 'background:var(--accent);color:#111;border-color:var(--accent);font-weight:700;' : ''}">${label}</button>`;
+      style="${active ? 'background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700;' : ''}">${label}</button>`;
   // mit/ohne-Gruppe (Frühstück, Zwischenreinigung)
   const ynGroup = (icon, labelText, field, cur) => `
       <span class="persons-label" style="margin-left:.7rem">${icon} ${labelText}:</span>
@@ -892,7 +892,7 @@ async function loadCleaningLog() {
           <div style="font-size:.72rem;color:var(--ink-soft);text-align:right">${s.label}</div>
           <div style="height:22px;background:var(--surface-3);border-radius:4px;overflow:hidden">
             <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:4px;transition:width .4s ease;display:flex;align-items:center;padding:0 .4rem">
-              ${s.count > 0 ? `<span style="font-size:.65rem;font-weight:700;color:#111;white-space:nowrap">${s.count}×</span>` : ''}
+              ${s.count > 0 ? `<span style="font-size:.65rem;font-weight:700;color:var(--on-accent);white-space:nowrap">${s.count}×</span>` : ''}
             </div>
           </div>
           <div style="font-size:.72rem;font-weight:700;color:var(--ink-soft)">${pct}%</div>
