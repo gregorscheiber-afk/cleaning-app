@@ -240,6 +240,18 @@ function openConfirmSheet(aptId, aptName, apt) {
     });
   }
 
+  // 2b. Kinderbett & Hochstuhl (Anzahl) – falls für die nächste Buchung
+  //     im Admin hinterlegt: als eigene Häkchen zum Aufstellen
+  const svcNum = v => {
+    if (v === 'ja')   return 1;
+    if (v === 'nein') return 0;
+    return /^\d+$/.test(String(v ?? '')) ? parseInt(v, 10) : null;
+  };
+  const cotN   = svcNum(nextBooking?.baby_cot);
+  const chairN = svcNum(nextBooking?.high_chair);
+  if (cotN >= 1)   items.push({ id: 'baby_cot',   label: t('confirmBabyCot', cotN),     sub: '', icon: '🛏️' });
+  if (chairN >= 1) items.push({ id: 'high_chair', label: t('confirmHighChair', chairN), sub: '', icon: '🪑' });
+
   // 3. Jede Admin-Notiz als eigene Checkbox
   (apt.notes || []).forEach((n, i) => {
     items.push({
