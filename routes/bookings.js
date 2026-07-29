@@ -45,7 +45,17 @@ router.post('/apartments/:id/bookings', requireAdmin, async (req, res, next) => 
 // Gespeichert pro Apartment + Anreisedatum, überlebt so den Excel-Import.
 router.put('/bookings/:id/services', requireAdmin, async (req, res, next) => {
   try {
-    const norm = v => (v === 'ja' || v === 'nein') ? v : null;
+    // Frühstück/Zwischenreinigung: 'ja'|'nein'|null
+    const normYN = v => (v === 'ja' || v === 'nein') ? v : null;
+    // Kinderbett/Hochstuhl: Anzahl 0..20 als Text. Alt-Werte 'ja'→1, 'nein'→0.
+    const normCount = v => {
+      if (v === 'ja')   return '1';
+      if (v === 'nein') return '0';
+      if (v === null || v === undefined || v === '') return null;
+      const n = parseInt(v, 10);
+      return (Number.isInteger(n) && n >= 0 && n <= 20) ? String(n) : null;
+    };
+    const NORM = { breakfast: normYN, interim_clean: normYN, baby_cot: normCount, high_chair: normCount };
     const body = req.body || {};
     const FIELDS = ['breakfast', 'interim_clean', 'baby_cot', 'high_chair'];
 
@@ -63,7 +73,7 @@ router.put('/bookings/:id/services', requireAdmin, async (req, res, next) => {
     );
     const cur = existing[0] || {};
     const merged = {};
-    for (const f of FIELDS) merged[f] = (f in body) ? norm(body[f]) : (cur[f] ?? null);
+    for (const f of FIELDS) merged[f] = (f in body) ? NORM[f](body[f]) : (cur[f] ?? null);
 
     const { rows: saved } = await pool.query(
       `INSERT INTO booking_services (apartment_id, start, breakfast, interim_clean, baby_cot, high_chair)

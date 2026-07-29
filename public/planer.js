@@ -266,17 +266,25 @@ function renderPlan(data, from, days) {
         }
         placed.push({ absStart, absEnd, el: block });
         const fmtDE = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.${y}`; };
-        // Zusatzleistungen auf dem Balken: Kinderbett/Hochstuhl (alle),
-        // Frühstück/Zwischenreinigung (nur Cecilia). ✓ = mit, ✗ = ohne
+        // Zusatzleistungen auf dem Balken. Kinderbett/Hochstuhl als ANZAHL
+        // (🛏️2 = zwei, 🛏️✗ = keins), Frühstück/Zwischenreinigung mit/ohne.
+        // Alt-Werte 'ja'/'nein' als 1/0 deuten.
+        const svcNum = v => {
+          if (v === 'ja')   return 1;
+          if (v === 'nein') return 0;
+          return /^\d+$/.test(String(v ?? '')) ? parseInt(v, 10) : null;
+        };
+        const cotN = svcNum(b.baby_cot);
+        const chairN = svcNum(b.high_chair);
         const svcTitle =
-          (b.baby_cot      ? ` · Kinderbett: ${b.baby_cot === 'ja' ? 'ja' : 'nein'}` : '') +
-          (b.high_chair    ? ` · Hochstuhl: ${b.high_chair === 'ja' ? 'ja' : 'nein'}` : '') +
+          (cotN   !== null ? ` · Kinderbett: ${cotN}` : '') +
+          (chairN !== null ? ` · Hochstuhl: ${chairN}` : '') +
           (b.breakfast     ? ` · Frühstück: ${b.breakfast === 'ja' ? 'mit' : 'ohne'}` : '') +
           (b.interim_clean ? ` · Zwischenreinigung: ${b.interim_clean === 'ja' ? 'mit' : 'ohne'}` : '');
         block.title = `${b.guest_name||''} · ${b.persons||''} · ${fmtDE(bStart)} → ${fmtDE(bEnd)}${svcTitle}`;
         const svcBadges =
-          (b.baby_cot      ? `<span class="bk-svc">🛏️${b.baby_cot === 'ja' ? '✓' : '✗'}</span>` : '') +
-          (b.high_chair    ? `<span class="bk-svc">🪑${b.high_chair === 'ja' ? '✓' : '✗'}</span>` : '') +
+          (cotN   !== null ? `<span class="bk-svc">🛏️${cotN   === 0 ? '✗' : cotN}</span>`   : '') +
+          (chairN !== null ? `<span class="bk-svc">🪑${chairN === 0 ? '✗' : chairN}</span>` : '') +
           (b.breakfast     ? `<span class="bk-svc">🥐${b.breakfast === 'ja' ? '✓' : '✗'}</span>` : '') +
           (b.interim_clean ? `<span class="bk-svc">🧹${b.interim_clean === 'ja' ? '✓' : '✗'}</span>` : '');
         const showNote = isNextBooking && aptNotes.length > 0;

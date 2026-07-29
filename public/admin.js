@@ -150,26 +150,41 @@ function parsePersons(persons) {
   return { adults: Number(a), children: Number(k), babies: Number(b) };
 }
 
-// Schalter für Zusatzleistungen pro Buchung: mit / ohne
-// Kinderbett & Hochstuhl bei ALLEN Apartments; Frühstück & Zwischenreinigung
-// zusätzlich nur bei Cecilia.
+// Alt-Werte ('ja'/'nein') als Anzahl deuten: ja→1, nein→0, Ziffer→Ziffer
+function svcCount(v) {
+  if (v === 'ja')   return '1';
+  if (v === 'nein') return '0';
+  return /^\d+$/.test(String(v ?? '')) ? String(v) : '';
+}
+
+// Schalter für Zusatzleistungen pro Buchung.
+// Kinderbett & Hochstuhl: ANZAHL (0–4) bei ALLEN Apartments.
+// Frühstück & Zwischenreinigung: mit/ohne, zusätzlich nur bei Cecilia.
 function renderServiceToggles(b, isCecilia) {
   const btn = (field, val, label, active) => `
     <button class="btn-sync" data-svc="${b.id}" data-field="${field}" data-val="${val}"
       style="${active ? 'background:var(--accent);color:#111;border-color:var(--accent);font-weight:700;' : ''}">${label}</button>`;
-  const group = (icon, labelText, field, cur) => `
+  // mit/ohne-Gruppe (Frühstück, Zwischenreinigung)
+  const ynGroup = (icon, labelText, field, cur) => `
       <span class="persons-label" style="margin-left:.7rem">${icon} ${labelText}:</span>
       ${btn(field, 'ja', 'mit', cur === 'ja')}
       ${btn(field, 'nein', 'ohne', cur === 'nein')}`;
+  // Anzahl-Gruppe (Kinderbett, Hochstuhl): 0,1,2,3,4
+  const countGroup = (icon, labelText, field, cur) => {
+    const c = svcCount(cur);
+    return `
+      <span class="persons-label" style="margin-left:.7rem">${icon} ${labelText}:</span>
+      ${[0,1,2,3,4].map(n => btn(field, String(n), String(n), c === String(n))).join('')}`;
+  };
   return `
     <div class="persons-editor" data-svc-wrap
-         data-bc="${b.baby_cot || ''}" data-hc="${b.high_chair || ''}"
+         data-bc="${svcCount(b.baby_cot)}" data-hc="${svcCount(b.high_chair)}"
          data-bf="${b.breakfast || ''}" data-ic="${b.interim_clean || ''}"
          style="margin-top:.35rem;flex-wrap:wrap">
-      ${group('🛏️', 'Kinderbett', 'baby_cot', b.baby_cot).replace('margin-left:.7rem', '')}
-      ${group('🪑', 'Hochstuhl', 'high_chair', b.high_chair)}
-      ${isCecilia ? group('🥐', 'Frühstück', 'breakfast', b.breakfast) : ''}
-      ${isCecilia ? group('🧹', 'Zwischenreinigung', 'interim_clean', b.interim_clean) : ''}
+      ${countGroup('🛏️', 'Kinderbett', 'baby_cot', b.baby_cot)}
+      ${countGroup('🪑', 'Hochstuhl', 'high_chair', b.high_chair)}
+      ${isCecilia ? ynGroup('🥐', 'Frühstück', 'breakfast', b.breakfast) : ''}
+      ${isCecilia ? ynGroup('🧹', 'Zwischenreinigung', 'interim_clean', b.interim_clean) : ''}
     </div>`;
 }
 
