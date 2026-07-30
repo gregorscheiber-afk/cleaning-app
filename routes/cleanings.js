@@ -70,7 +70,8 @@ router.get('/cleanings/stats', requireAdmin, async (req, res, next) => {
         c.confirmed_at,
         a.name as apt_name,
         h.name as house_name,
-        EXTRACT(HOUR FROM c.confirmed_at AT TIME ZONE 'Europe/Vienna') as hour
+        EXTRACT(HOUR   FROM c.confirmed_at AT TIME ZONE 'Europe/Vienna') * 60
+      + EXTRACT(MINUTE FROM c.confirmed_at AT TIME ZONE 'Europe/Vienna') as minute
       FROM cleanings c
       JOIN apartments a ON a.id = c.apartment_id
       LEFT JOIN houses h ON h.id = a.house_id
@@ -78,19 +79,23 @@ router.get('/cleanings/stats', requireAdmin, async (req, res, next) => {
       LIMIT 500
     `);
 
-    // Nach Zeitblock gruppieren
+    // Nach Zeitblock gruppieren (Minuten seit Mitternacht, Wiener Zeit).
+    // "Vor 08:00" fängt frühe Reinigungen ab, damit keine Daten unsichtbar
+    // werden; die restlichen Fenster wie vom Büro gewünscht.
     const slots = [
-      { label: 'Vor 09:00', min: 0,  max: 9  },
-      { label: '09–11 Uhr', min: 9,  max: 11 },
-      { label: '11–13 Uhr', min: 11, max: 13 },
-      { label: '13–15 Uhr', min: 13, max: 15 },
-      { label: '15–17 Uhr', min: 15, max: 17 },
-      { label: 'Nach 17:00', min: 17, max: 24 },
+      { label: 'Vor 08:00',      min: 0,    max: 480  },
+      { label: '08:00–10:00',    min: 480,  max: 600  },
+      { label: '10:00–12:00',    min: 600,  max: 720  },
+      { label: '12:00–14:00',    min: 720,  max: 840  },
+      { label: '14:00–15:00',    min: 840,  max: 900  },
+      { label: '15:00–16:00',    min: 900,  max: 960  },
+      { label: '16:00–16:30',    min: 960,  max: 990  },
+      { label: 'Nach 16:30',     min: 990,  max: 1440 },
     ];
 
     const counts = slots.map(s => ({
       label: s.label,
-      count: rows.filter(r => r.hour >= s.min && r.hour < s.max).length,
+      count: rows.filter(r => Number(r.minute) >= s.min && Number(r.minute) < s.max).length,
     }));
 
     res.json({ total: rows.length, slots: counts, recent: rows.slice(0, 20) });
