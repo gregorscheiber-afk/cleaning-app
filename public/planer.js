@@ -217,6 +217,8 @@ function renderPlan(data, from, days) {
         const bStart = b.start.substring(0,10);
         const bEnd   = b.end.substring(0,10);
         const isNextBooking = nextBookingId && b.id === nextBookingId;
+        // Kurzfristige/neue Buchung: bis zum Ablauf (24 Std) hervorheben
+        const isLM = b.highlighted_until && new Date() < new Date(b.highlighted_until);
 
         // Sichtbarer Startindex
         const si = dateIdx[bStart] !== undefined ? dateIdx[bStart] : dates.findIndex(d => d >= bStart);
@@ -251,7 +253,7 @@ function renderPlan(data, from, days) {
         const blockWidth = endX - leftOffset - 2;
 
         const block = document.createElement('div');
-        block.className = `bk ${color}`;
+        block.className = `bk ${color}${isLM ? ' bk-lm' : ''}`;
         block.style.left  = `${leftOffset + 1}px`;
         block.style.width = `${Math.max(blockWidth, 10)}px`;
 
@@ -293,6 +295,7 @@ function renderPlan(data, from, days) {
         // als der Gastname (dieser dünner, wird bei Platzmangel abgekürzt)
         const fmtKurz = iso => { const [y,m,d] = iso.split('-'); return `${d}.${m}.`; };
         block.innerHTML = `
+          ${isLM ? '<span class="bk-lm-icon">🔔</span>' : ''}
           <span class="bk-dates">${fmtKurz(bStart)}–${fmtKurz(bEnd)}</span>
           <span class="bk-guest">${esc(b.guest_name||'–')}</span>
           ${b.persons ? `<span class="bk-persons">${esc(b.persons)}</span>` : ''}

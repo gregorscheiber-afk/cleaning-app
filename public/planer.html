@@ -263,6 +263,17 @@ html, body { height: 100%; overflow: hidden; }
 .bk-6 { background: #e74c3c; }
 .bk-7 { background: #3498db; }
 
+/* Kurzfristige/neue Buchung: blinkender oranger Rahmen + Glocke */
+.bk.bk-lm {
+  z-index: 5;
+  animation: pulse-lm 1.1s ease-in-out infinite;
+}
+@keyframes pulse-lm {
+  0%, 100% { box-shadow: 0 0 0 2px var(--putzen); }
+  50%      { box-shadow: 0 0 0 2px rgba(191,66,11,.15); }
+}
+.bk-lm-icon { font-size: .68rem; margin-right: .15rem; flex-shrink: 0; }
+
 /* Checkout marker (colored left border on checkout day) */
 .co-marker {
   position: absolute;

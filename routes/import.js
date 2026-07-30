@@ -99,16 +99,13 @@ async function importBookingRows(importRows) {
     try {
       await client.query('BEGIN');
 
-      // Alle bestehenden Highlights löschen – frischer Start bei jedem Upload
-      for (const apt of Object.values(aptByCode)) {
-        await client.query(
-          `UPDATE bookings SET highlighted_until=NULL WHERE apartment_id=$1`,
-          [apt.id]
-        );
-      }
-
-      // Vor dem Ersetzen: nächste bekannte Buchung pro Apartment merken
+      // Vor dem Ersetzen merken: (a) die bisher nächste Buchung und
+      // (b) bestehende Hervorhebungen pro Buchung (uid → Ablaufzeitpunkt).
+      // Die Highlights werden NICHT pauschal gelöscht, sondern nach dem
+      // Re-Import wieder gesetzt – so überlebt die 24-Stunden-Markierung
+      // die stündlichen Importe.
       const prevNext = {}; // aptId → frühestes zukünftiges Startdatum
+      const prevHi   = {}; // aptId → { uid: highlighted_until }
       for (const aptId of rowsByApt.keys()) {
         const { rows } = await client.query(
           `SELECT LEFT(start,10) as d FROM bookings
@@ -117,6 +114,14 @@ async function importBookingRows(importRows) {
           [aptId, today]
         );
         prevNext[aptId] = rows[0]?.d || null;
+
+        const { rows: hi } = await client.query(
+          `SELECT uid, highlighted_until FROM bookings
+           WHERE apartment_id=$1 AND highlighted_until IS NOT NULL`,
+          [aptId]
+        );
+        prevHi[aptId] = {};
+        hi.forEach(r => { if (r.uid) prevHi[aptId][r.uid] = r.highlighted_until; });
       }
 
       // Die PMS-Liste deckt ein rollierendes Zeitfenster ab (ca. 1 Monat
@@ -154,7 +159,24 @@ async function importBookingRows(importRows) {
           created++;
         }
 
-        // Neue frühere Buchung? → im Planer bis 19:00 Uhr hervorheben
+        // Bestehende Hervorhebungen wieder setzen (überleben so den
+        // stündlichen Re-Import; die 24-Stunden-Frist läuft normal weiter)
+        const carried = prevHi[aptId] || {};
+        for (const b of aptRows) {
+          const guestSlug = (b.guestName || '')
+            .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').substring(0, 24);
+          const uid = `excel-${aptId}-${b.start}_${b.end}_${guestSlug}`;
+          if (carried[uid]) {
+            await client.query(
+              `UPDATE bookings SET highlighted_until=$1 WHERE apartment_id=$2 AND uid=$3`,
+              [carried[uid], aptId, uid]
+            );
+          }
+        }
+
+        // Drängt sich eine Buchung VOR die bisher nächste? → als neue,
+        // kurzfristige Buchung 24 Stunden lang hervorheben (nur wenn nicht
+        // ohnehin schon markiert).
         const { rows: newNext } = await client.query(
           `SELECT id, LEFT(start,10) as d FROM bookings
            WHERE apartment_id=$1 AND LEFT(start,10)>$2
@@ -164,9 +186,11 @@ async function importBookingRows(importRows) {
         const newNextDate = newNext[0]?.d || null;
         const oldNextDate = prevNext[aptId] || null;
         if (newNextDate && (!oldNextDate || newNextDate < oldNextDate)) {
+          const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
           await client.query(
-            `UPDATE bookings SET highlighted_until=$1 WHERE id=$2`,
-            [`${newNextDate}T19:00:00`, newNext[0].id]
+            `UPDATE bookings SET highlighted_until=$1
+             WHERE id=$2 AND highlighted_until IS NULL`,
+            [until, newNext[0].id]
           );
         }
       }
