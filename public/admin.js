@@ -97,6 +97,10 @@ function isCeciliaApt(apt) {
   const houseName = allHouses.find(h => h.id === apt.house_id)?.name || '';
   return houseName.toLowerCase().includes('cecilia');
 }
+function isWhitePearlApt(apt) {
+  const houseName = allHouses.find(h => h.id === apt.house_id)?.name || '';
+  return houseName.toLowerCase().includes('white pearl');
+}
 
 function renderJoseNotesPanel(apt) {
   const notes = (apt.jose_notes || []).map(n => `
@@ -159,8 +163,9 @@ function svcCount(v) {
 
 // Schalter für Zusatzleistungen pro Buchung.
 // Kinderbett & Hochstuhl: ANZAHL (0–4) bei ALLEN Apartments.
-// Frühstück & Zwischenreinigung: mit/ohne, zusätzlich nur bei Cecilia.
-function renderServiceToggles(b, isCecilia) {
+// Frühstück: nur Cecilia. Zwischenreinigung: Cecilia + White Pearl.
+// extras = { breakfast: bool, interim: bool }
+function renderServiceToggles(b, extras) {
   const btn = (field, val, label, active) => `
     <button class="btn-sync" data-svc="${b.id}" data-field="${field}" data-val="${val}"
       style="${active ? 'background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700;' : ''}">${label}</button>`;
@@ -183,12 +188,12 @@ function renderServiceToggles(b, isCecilia) {
          style="margin-top:.35rem;flex-wrap:wrap">
       ${countGroup('🛏️', 'Kinderbett', 'baby_cot', b.baby_cot)}
       ${countGroup('🪑', 'Hochstuhl', 'high_chair', b.high_chair)}
-      ${isCecilia ? ynGroup('🥐', 'Frühstück', 'breakfast', b.breakfast) : ''}
-      ${isCecilia ? ynGroup('🧹', 'Zwischenreinigung', 'interim_clean', b.interim_clean) : ''}
+      ${extras.breakfast ? ynGroup('🥐', 'Frühstück', 'breakfast', b.breakfast) : ''}
+      ${extras.interim   ? ynGroup('🧹', 'Zwischenreinigung', 'interim_clean', b.interim_clean) : ''}
     </div>`;
 }
 
-function renderAdminBookings(bookings, isCecilia) {
+function renderAdminBookings(bookings, extras) {
   if (!bookings?.length) return `<div style="font-size:.8rem;color:var(--ink-muted)">${t('noUpcoming')}</div>`;
   return bookings.map(b => {
     const p = parsePersons(b.persons);
@@ -230,7 +235,7 @@ function renderAdminBookings(bookings, isCecilia) {
         </div>
         <button class="persons-save-btn" data-save-booking="${b.id}">✓</button>
       </div>
-      ${renderServiceToggles(b, isCecilia)}
+      ${renderServiceToggles(b, extras)}
     </div>`;
   }).join('');
 }
@@ -575,8 +580,19 @@ function initVerwaltungToggle() {
 }
 
 // ── Häuser ────────────────────────────────────────────────
+// Gewünschte Reihenfolge der Häuser im Admin (per Stichwort im Namen)
+const HOUSE_ORDER = ['historical', 'mühlhof', 'pure', 'lodge', 'cecilia', 'white pearl', 'pirchhof'];
+function houseRank(name) {
+  const n = (name || '').toLowerCase().replace(/ü/g, 'u');
+  for (let i = 0; i < HOUSE_ORDER.length; i++) {
+    if (n.includes(HOUSE_ORDER[i].replace(/ü/g, 'u'))) return i;
+  }
+  return HOUSE_ORDER.length; // unbekannte Häuser ans Ende
+}
+
 async function loadHouses() {
   allHouses = (await (await fetch('/api/houses')).json());
+  allHouses.sort((a, b) => houseRank(a.name) - houseRank(b.name) || (a.name || '').localeCompare(b.name || ''));
   document.getElementById('houses-tbody').innerHTML = allHouses.map(h => `
     <tr>
       <td><div style="font-size:1rem;font-weight:700;color:var(--ink)">${esc(h.name)}</div></td>
@@ -783,7 +799,7 @@ function renderAptRow(apt) {
             <td colspan="5" style="padding:0">
               <div class="admin-bookings-panel">
                 <div class="admin-bookings-title">📅 ${t('upcomingBookings')}</div>
-                ${renderAdminBookings(apt.upcoming_bookings, isCeciliaApt(apt))}
+                ${renderAdminBookings(apt.upcoming_bookings, { breakfast: isCeciliaApt(apt), interim: isCeciliaApt(apt) || isWhitePearlApt(apt) })}
               </div>
             </td>
           </tr>
