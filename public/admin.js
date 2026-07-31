@@ -690,7 +690,6 @@ function renderHouseApts(houseId) {
   });
 
   apts.forEach(apt => {
-    attachNoteHandlers(apt);
     if (isCeciliaApt(apt)) attachJoseNoteHandlers(apt);
   });
 
@@ -764,9 +763,9 @@ function renderAptRow(apt) {
       <td colspan="5" style="padding:0">
         <table style="width:100%;border-collapse:collapse">
           <tr>
-            <td style="padding:0 1.1rem .75rem;width:28%;border-top:3px solid var(--accent)">
-              <div style="text-align:center;padding:.55rem 0 .3rem">
-                <div style="font-size:1.15rem;font-weight:700;color:var(--accent);letter-spacing:-.01em">${esc(apt.name)}</div>
+            <td style="padding:.6rem 1.1rem .75rem;width:28%;border-top:3px solid var(--accent)">
+              <div style="text-align:center;padding:.2rem 0 .35rem">
+                <span style="display:inline-block;background:var(--accent);color:var(--on-accent);font-size:1.05rem;font-weight:800;letter-spacing:.01em;padding:.32rem 1rem;border-radius:999px">${esc(apt.name)}</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:.25rem">
                 <span style="font-size:.68rem;color:var(--ink-muted)">⏰ ${t('cleanFrom')}:</span>
@@ -779,7 +778,6 @@ function renderAptRow(apt) {
             <td style="padding:.75rem .5rem;width:18%"></td>
             <td style="padding:.75rem 1.1rem"></td>
           </tr>
-          <tr><td colspan="5" style="padding:0">${renderNotesPanel(apt)}</td></tr>
           ${isCeciliaApt(apt) ? `<tr><td colspan="5" style="padding:0">${renderJoseNotesPanel(apt)}</td></tr>` : ''}
           <tr>
             <td colspan="5" style="padding:0">
