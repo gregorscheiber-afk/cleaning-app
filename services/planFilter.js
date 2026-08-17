@@ -4,6 +4,7 @@
 //
 //  mainstreet = Chalet White Pearl + Chalet Cecilia
 //  sonja      = MYALPS Ötztal + (Jordans) Lodge
+//  oetztal    = nur MYALPS Ötztal (Reinigungs-Team Ötztal)
 //  wiwa       = alle anderen Häuser (Lodge bleibt dabei!), aber OHNE Ötztal
 //
 // '%tztal%' matcht "Ötztal"/"Otztal"/"Oetztal" – umgeht Umlaut-Stolperfallen.
@@ -17,6 +18,7 @@ const IS_LODGE = `LOWER(h.name) LIKE '%lodge%'`;
 function planCondition(plan) {
   if (plan === 'mainstreet') return `(${IS_WP} OR ${IS_CEC})`;
   if (plan === 'sonja')      return `(${IS_OTZ} OR ${IS_LODGE})`;
+  if (plan === 'oetztal')    return IS_OTZ;
   if (plan === 'wiwa')       return `(h.name IS NULL OR NOT (${IS_WP} OR ${IS_CEC} OR ${IS_OTZ}))`;
   return '';
 }
