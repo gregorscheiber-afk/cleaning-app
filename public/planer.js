@@ -8,18 +8,21 @@ const badgeHeader = document.getElementById('plan-badge');
 // Plan-Typ aus URL ermitteln
 const urlParams  = new URLSearchParams(window.location.search);
 const planType   = urlParams.get('plan') || 'wiwa';
-const isMainstreet = planType === 'mainstreet';
+// Hausfilter-Dropdown nur im WIWA-Plan (mainstreet/sonja haben feste Häuser)
+const showHouseFilter = planType === 'wiwa';
+const isMainstreet = !showHouseFilter; // steuert loadHouses/house_id-Weitergabe
 
 const PLAN_LABELS = {
   wiwa:       'Plan WIWA',
   mainstreet: 'Plan MAINSTREET',
+  sonja:      'Plan SONJA',
 };
 
 badgeHeader.textContent = PLAN_LABELS[planType] || 'Belegungsplan';
 document.title = `MYALPS · ${PLAN_LABELS[planType] || 'Belegungsplan'}`;
 
 // Hausfilter nur für WIWA
-if (!isMainstreet) houseFilter.style.display = 'block';
+if (showHouseFilter) houseFilter.style.display = 'block';
 
 // Farben pro Haus
 const COLORS = ['bk-0','bk-1','bk-2','bk-3','bk-4','bk-5','bk-6','bk-7'];

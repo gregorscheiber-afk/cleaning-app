@@ -1,4 +1,5 @@
 const { pool } = require('../db');
+const { planCondition } = require('./planFilter');
 
 // Gibt Apartments zurück, die heute Anreise haben UND noch geputzt werden
 // müssen (Status 'muss_geputzt_werden'). Wichtig: NICHT einfach "!= sauber"
@@ -10,13 +11,8 @@ const { pool } = require('../db');
 async function getUncleanBeforeCheckin(plan) {
   const today = new Date().toISOString().substring(0, 10);
 
-  let planFilter = '';
-  if (plan === 'mainstreet') {
-    planFilter = `AND (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
-  } else if (plan === 'wiwa') {
-    // Apartments ohne Haus (h.name NULL) gehören zum Standard-Plan WIWA
-    planFilter = `AND (h.name IS NULL OR NOT (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%'))`;
-  }
+  const cond = planCondition(plan);
+  const planFilter = cond ? `AND ${cond}` : '';
 
   const { rows } = await pool.query(`
     SELECT DISTINCT a.id, a.name, h.name as house_name

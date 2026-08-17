@@ -1,19 +1,15 @@
 const express = require('express');
 const { pool } = require('../db');
 const { requireAdmin } = require('../services/auth');
+const { planCondition } = require('../services/planFilter');
 const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    // Optionaler Plan-Filter (gleiche Regel wie im Planer):
-    // mainstreet = White Pearl & Cecilia, wiwa = alle anderen Häuser
+    // Optionaler Plan-Filter (gleiche Regel wie im Planer, zentral definiert)
     const { plan } = req.query;
-    let where = '';
-    if (plan === 'mainstreet') {
-      where = `WHERE (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
-    } else if (plan === 'wiwa') {
-      where = `WHERE NOT (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
-    }
+    const cond = planCondition(plan);
+    const where = cond ? `WHERE ${cond}` : '';
     const { rows } = await pool.query(`
       SELECT h.*,
         COUNT(a.id)::int as total,

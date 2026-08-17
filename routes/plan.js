@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { getUncleanBeforeCheckin } = require('../services/cleaningAlert');
+const { planCondition, SONJA_ORDER } = require('../services/planFilter');
 const router = express.Router();
 
 // GET /api/plan?from=YYYY-MM-DD&days=45&house_id=X&plan=wiwa|mainstreet
@@ -19,20 +20,17 @@ router.get('/plan', async (req, res, next) => {
     let aptSql = `SELECT a.*, h.name as house_name FROM apartments a LEFT JOIN houses h ON h.id=a.house_id WHERE 1=1`;
     const aptParams = [];
 
-    if (plan === 'mainstreet') {
-      aptSql += ` AND (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%')`;
-    } else if (plan === 'wiwa') {
-      // h.name IS NULL: Apartments ohne Haus dürfen nicht aus beiden Plänen
-      // fallen (NULL-Vergleich wäre sonst weder wahr noch falsch) → sie
-      // erscheinen im Standard-Plan WIWA
-      aptSql += ` AND (h.name IS NULL OR NOT (LOWER(h.name) LIKE '%white pearl%' OR LOWER(h.name) LIKE '%cecilia%'))`;
-      if (houseId) { aptParams.push(houseId); aptSql += ` AND a.house_id=$${aptParams.length}`; }
-    } else if (houseId) {
+    const cond = planCondition(plan);
+    if (cond) aptSql += ` AND ${cond}`;
+    // Hausfilter-Dropdown gibt es nur im WIWA-Plan (mainstreet/sonja fest)
+    if (houseId && plan !== 'mainstreet' && plan !== 'sonja') {
       aptParams.push(houseId);
       aptSql += ` AND a.house_id=$${aptParams.length}`;
     }
 
-    aptSql += ` ORDER BY h.name, a.name`;
+    // Sonja: Ötztal zuerst, Lodge danach; sonst alphabetisch nach Haus
+    const orderBy = plan === 'sonja' ? `${SONJA_ORDER}, h.name, a.name` : 'h.name, a.name';
+    aptSql += ` ORDER BY ${orderBy}`;
     const { rows: apartments } = await pool.query(aptSql, aptParams);
 
     const ids = apartments.map(a => a.id);
