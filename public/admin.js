@@ -889,7 +889,7 @@ async function loadCleaningLog() {
   const body = document.getElementById('cleaning-log-body');
   if (!body) return;
   try {
-    const { total, slots, recent } = await (await fetch('/api/cleanings/stats')).json();
+    const { total, slots, recent, recentOetztal = [] } = await (await fetch('/api/cleanings/stats')).json();
 
     if (!total) {
       body.innerHTML = `<div style="color:var(--ink-muted);font-size:.82rem">Noch keine Reinigungen bestätigt.</div>`;
@@ -913,8 +913,8 @@ async function loadCleaningLog() {
         </div>`;
     }).join('');
 
-    // Letzte Reinigungen
-    const recentRows = recent.slice(0,8).map(r => {
+    // Eine Liste von Reinigungen als Zeilen rendern (Hausname optional)
+    const renderList = (list, showHouse = true) => list.slice(0,8).map(r => {
       const d = new Date(r.confirmed_at);
       const dateStr = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'2-digit' });
       const timeStr = d.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
@@ -922,21 +922,27 @@ async function loadCleaningLog() {
         <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--line)">
           <div>
             <span style="font-size:.82rem;font-weight:600;color:var(--ink)">${esc(r.apt_name)}</span>
-            ${r.house_name ? `<span style="font-size:.72rem;color:var(--ink-muted)"> · ${esc(r.house_name)}</span>` : ''}
+            ${showHouse && r.house_name ? `<span style="font-size:.72rem;color:var(--ink-muted)"> · ${esc(r.house_name)}</span>` : ''}
           </div>
           <div style="font-size:.72rem;color:var(--ink-soft);white-space:nowrap">${dateStr} ${timeStr}</div>
         </div>`;
     }).join('');
+
+    const sectionTitle = txt => `<div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:1.1rem 0 .6rem">${txt}</div>`;
+
+    // Separater Abschnitt für MYALPS Ötztal (nur wenn es dort Reinigungen gibt)
+    const oetztalSection = recentOetztal.length ? `
+      ${sectionTitle('🏔️ MYALPS Ötztal')}
+      ${renderList(recentOetztal, false)}` : '';
 
     body.innerHTML = `
       <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:.8rem">
         Zeitverteilung · ${total} Reinigungen gesamt
       </div>
       ${bars}
-      <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin:1.1rem 0 .6rem">
-        Letzte Reinigungen
-      </div>
-      ${recentRows}`;
+      ${oetztalSection}
+      ${sectionTitle('Letzte Reinigungen · übrige Häuser')}
+      ${renderList(recent)}`;
   } catch(e) {
     document.getElementById('cleaning-log-body').innerHTML =
       `<div style="color:var(--putzen);font-size:.82rem">Fehler beim Laden.</div>`;

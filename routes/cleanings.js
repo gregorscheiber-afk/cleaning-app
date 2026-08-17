@@ -98,7 +98,12 @@ router.get('/cleanings/stats', requireAdmin, async (req, res, next) => {
       count: rows.filter(r => Number(r.minute) >= s.min && Number(r.minute) < s.max).length,
     }));
 
-    res.json({ total: rows.length, slots: counts, recent: rows.slice(0, 20) });
+    // MYALPS Ötztal getrennt auflisten (eigenes Reinigungsteam)
+    const isOtz = r => /tztal/i.test(r.house_name || '');
+    const recent        = rows.filter(r => !isOtz(r)).slice(0, 20);
+    const recentOetztal = rows.filter(isOtz).slice(0, 20);
+
+    res.json({ total: rows.length, slots: counts, recent, recentOetztal });
   } catch(e) { next(e); }
 });
 
