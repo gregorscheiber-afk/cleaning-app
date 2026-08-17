@@ -112,6 +112,12 @@ function renderPlan(data, from, days) {
     houseMap.get(hid).apts.push(apt);
   });
 
+  // Apartments innerhalb eines Hauses natürlich/numerisch sortieren
+  // (z. B. Ötztal-Zimmer 1, 2, … 10 statt 1, 10, 2, …)
+  houseMap.forEach(house => {
+    house.apts.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true }));
+  });
+
   const COL_W = 36; // px pro Tag
 
   // HTML aufbauen
@@ -306,6 +312,24 @@ function renderPlan(data, from, days) {
           ${showNote ? `<span class="bk-note-icon">ℹ</span>` : ''}`;
         cell.appendChild(block);
 
+        // Antippen/Klicken des Balkens zeigt die Buchungs-Infos – vor allem
+        // am Handy, wo schmale Balken Personen/Datum nicht darstellen können.
+        const nights = Math.round((new Date(bEnd) - new Date(bStart)) / 86400000);
+        const popHtml = `
+          <div class="bk-pop-title">${fmtDE(bStart)} → ${fmtDE(bEnd)}</div>
+          <div class="bk-pop-sub">${nights} ${nights === 1 ? 'Nacht' : 'Nächte'}</div>
+          ${b.guest_name    ? `<div class="bk-pop-row">👤 ${esc(b.guest_name)}</div>` : ''}
+          ${b.persons       ? `<div class="bk-pop-row">👥 ${esc(b.persons)}</div>` : ''}
+          ${cotN   !== null ? `<div class="bk-pop-row">🛏️ Kinderbett: ${cotN === 0 ? 'keins' : cotN}</div>` : ''}
+          ${chairN !== null ? `<div class="bk-pop-row">🪑 Hochstuhl: ${chairN === 0 ? 'keiner' : chairN}</div>` : ''}
+          ${b.breakfast     ? `<div class="bk-pop-row">🥐 Frühstück: ${b.breakfast === 'ja' ? 'mit' : 'ohne'}</div>` : ''}
+          ${b.interim_clean ? `<div class="bk-pop-row">🧹 Zwischenreinigung: ${b.interim_clean === 'ja' ? 'mit' : 'ohne'}</div>` : ''}`;
+        block.addEventListener('click', (e) => {
+          if (e.target.closest('.bk-note-icon')) return; // Notiz-Icon hat eigenes Verhalten
+          e.stopPropagation();
+          openBookingPop(block, popHtml);
+        });
+
         // Tooltip per JS an den Body hängen (damit er nicht abgeschnitten wird)
         // Funktioniert per Hover (Desktop) UND per Tippen (Handy)
         if (showNote) {
@@ -441,4 +465,30 @@ document.addEventListener('click', (e) => {
     document.querySelectorAll('.note-tooltip-float').forEach(t => t.remove());
     document.querySelectorAll('.bk-note-icon').forEach(i => i._tip = null);
   }
+});
+
+// ── Buchungs-Info-Karte (Antippen eines Balkens) ──────────
+let _bkPop = null;
+function closeBookingPop() { if (_bkPop) { _bkPop.remove(); _bkPop = null; } }
+function openBookingPop(anchor, html) {
+  closeBookingPop();
+  document.querySelectorAll('.note-tooltip-float').forEach(t => t.remove());
+  const pop = document.createElement('div');
+  pop.className = 'bk-info-pop';
+  pop.innerHTML = html;
+  document.body.appendChild(pop);
+  // über dem Balken platzieren, am Rand nicht abschneiden, sonst darunter
+  const r = anchor.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let left = r.left + r.width / 2 - w / 2;
+  left = Math.max(10, Math.min(left, window.innerWidth - w - 10));
+  let top = r.top - h - 8;
+  if (top < 10) top = r.bottom + 8;
+  pop.style.left = left + 'px';
+  pop.style.top  = top + 'px';
+  _bkPop = pop;
+}
+// Tippen außerhalb schließt die Info-Karte
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.bk') && !e.target.closest('.bk-info-pop')) closeBookingPop();
 });

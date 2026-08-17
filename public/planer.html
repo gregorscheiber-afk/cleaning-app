@@ -226,8 +226,26 @@ html, body { height: 100%; overflow: hidden; }
   overflow: hidden;
   white-space: nowrap;
   z-index: 3;
-  cursor: default;
+  cursor: pointer;
 }
+
+/* Buchungs-Info-Karte (erscheint beim Antippen eines Balkens) */
+.bk-info-pop {
+  position: fixed;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(20,30,20,.18);
+  padding: .7rem .85rem;
+  max-width: 260px;
+  font-size: .82rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.bk-pop-title { font-weight: 800; font-size: .95rem; color: var(--ink); }
+.bk-pop-sub   { font-size: .72rem; color: var(--ink-soft); margin-bottom: .35rem; }
+.bk-pop-row   { padding: .12rem 0; }
 
 /* Überlappende Buchungen: obere/untere Hälfte der Zeile */
 .bk.bk-upper { bottom: 50%; top: 3px; }
