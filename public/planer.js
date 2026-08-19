@@ -173,7 +173,12 @@ function renderPlan(data, from, days) {
       ${houseCells}
     </tr>`;
 
+    // MYALPS Tirol: Zimmernummer (Name) statt PMS-Code zeigen (T1 → 1).
+    // PMS-Code bleibt intern für den Buchungs-Abgleich; nur die Anzeige ändert sich.
+    const isTirol = /tirol/i.test(house.name || '');
+
     house.apts.forEach(apt => {
+      const aptLabel = isTirol ? (apt.name || apt.pms_code) : (apt.pms_code || apt.name);
       // Notizen für dieses Apartment merken
       const aptNotes = apt.notes || [];
       // Checkout-Tage bestimmen
@@ -184,7 +189,7 @@ function renderPlan(data, from, days) {
           <div class="td-name-inner">
             <div>
               <span class="status-dot dot-${apt.status}"></span>
-              <span class="apt-code">${esc(apt.pms_code || apt.name)}</span>
+              <span class="apt-code">${esc(aptLabel)}</span>
               ${(apt.jose_notes || []).length ? `<span class="bk-note-icon" data-jose-apt="${apt.id}" style="display:inline-flex;margin-left:.35rem;vertical-align:middle">📝</span>` : ''}
             </div>
             <div class="apt-time-label">⏰ ${esc(apt.checkout_time||'09:30')} Uhr</div>
