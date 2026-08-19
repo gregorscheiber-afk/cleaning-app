@@ -22,8 +22,8 @@ router.get('/plan', async (req, res, next) => {
 
     const cond = planCondition(plan);
     if (cond) aptSql += ` AND ${cond}`;
-    // Hausfilter-Dropdown gibt es nur im WIWA-Plan (mainstreet/sonja fest)
-    if (houseId && plan !== 'mainstreet' && plan !== 'sonja') {
+    // Hausfilter-Dropdown gibt es nur im WIWA-Plan (mainstreet/sonja/helga fest)
+    if (houseId && plan !== 'mainstreet' && plan !== 'sonja' && plan !== 'helga') {
       aptParams.push(houseId);
       aptSql += ` AND a.house_id=$${aptParams.length}`;
     }
