@@ -437,6 +437,9 @@ btnToday.addEventListener('click', () => {
 async function checkCleaningAlert() {
   const container = document.getElementById('cleaning-alert-container');
   if (!container) return;
+  // Plan Helga: kein Reinigungsalarm. In MYALPS Tirol werden die Apartments
+  // nicht auf "sauber" gestellt → der Alarm würde dauernd Fehlalarm auslösen.
+  if (planType === 'helga') { container.innerHTML = ''; return; }
   try {
     const res = await fetch(`/api/cleaning-alert?plan=${planType}`);
     const apts = await res.json();
