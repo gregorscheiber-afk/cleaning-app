@@ -1,7 +1,7 @@
 const express = require('express');
 const { pool } = require('../db');
 const { getUncleanBeforeCheckin } = require('../services/cleaningAlert');
-const { planCondition, SONJA_ORDER, HELGA_ORDER } = require('../services/planFilter');
+const { planCondition, SONJA_ORDER } = require('../services/planFilter');
 const router = express.Router();
 
 // GET /api/plan?from=YYYY-MM-DD&days=45&house_id=X&plan=wiwa|mainstreet
@@ -28,11 +28,8 @@ router.get('/plan', async (req, res, next) => {
       aptSql += ` AND a.house_id=$${aptParams.length}`;
     }
 
-    // Sonja: Ötztal zuerst, Lodge danach; Helga: Tirol zuerst, Rest
-    // alphabetisch; sonst alphabetisch nach Haus.
-    const orderBy = plan === 'sonja' ? `${SONJA_ORDER}, h.name, a.name`
-                  : plan === 'helga' ? `${HELGA_ORDER}, h.name, a.name`
-                  : 'h.name, a.name';
+    // Sonja: Ötztal zuerst, Lodge danach; sonst alphabetisch nach Haus
+    const orderBy = plan === 'sonja' ? `${SONJA_ORDER}, h.name, a.name` : 'h.name, a.name';
     aptSql += ` ORDER BY ${orderBy}`;
     const { rows: apartments } = await pool.query(aptSql, aptParams);
 
