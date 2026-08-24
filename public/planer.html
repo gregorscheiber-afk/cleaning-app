@@ -6,12 +6,25 @@
 <title>MYALPS · Belegungsplan</title>
 <link rel="stylesheet" href="/style.css"/>
 <style>
-html, body { height: 100%; overflow: hidden; }
-
-.planer-page {
+html { height: 100%; }
+body {
+  /* min-height:100vh aus style.css überschreiben – sonst wird der Body am
+     Handy höher als der sichtbare Bereich und die letzten Zimmer landen
+     hinter der Browser-/Adressleiste. */
+  min-height: 0;
+  height: 100vh;   /* Fallback für alte Browser */
+  height: 100dvh;  /* Handy: berücksichtigt ein-/ausblendende Adressleiste */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 56px);
+}
+header.topbar { flex-shrink: 0; }
+
+.planer-page {
+  flex: 1;
+  min-height: 0;   /* erlaubt dem Scroll-Bereich zu schrumpfen statt überzulaufen */
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Toolbar ── */
@@ -73,7 +86,9 @@ html, body { height: 100%; overflow: hidden; }
 /* ── Scroll container ── */
 .planer-scroll {
   flex: 1;
+  min-height: 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   position: relative;
 }
 
