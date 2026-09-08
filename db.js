@@ -110,6 +110,10 @@ async function initDb() {
   await pool.query(`ALTER TABLE bookings   ADD COLUMN IF NOT EXISTS highlighted_until TEXT`);
   await pool.query(`ALTER TABLE booking_services ADD COLUMN IF NOT EXISTS baby_cot   TEXT`);
   await pool.query(`ALTER TABLE booking_services ADD COLUMN IF NOT EXISTS high_chair TEXT`);
+  // Info-Übersetzungen: message = Deutsch/Standard, message_* = weitere Sprachen
+  await pool.query(`ALTER TABLE reinigung_infos ADD COLUMN IF NOT EXISTS message_hr TEXT`);
+  await pool.query(`ALTER TABLE reinigung_infos ADD COLUMN IF NOT EXISTS message_tr TEXT`);
+  await pool.query(`ALTER TABLE reinigung_infos ADD COLUMN IF NOT EXISTS message_en TEXT`);
 
   console.log('Datenbank bereit.');
 }

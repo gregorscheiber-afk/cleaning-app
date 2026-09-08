@@ -34,16 +34,17 @@ router.get('/infos', requireAdmin, async (_req, res, next) => {
 // ── Admin: neue Info anlegen ────────────────────────────────
 router.post('/infos', requireAdmin, async (req, res, next) => {
   try {
-    const { message, house_id, frequency } = req.body || {};
-    if (!message || !message.trim()) return res.status(400).json({ error: 'Text ist erforderlich' });
+    const { message, message_hr, message_tr, message_en, house_id, frequency } = req.body || {};
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Text (Deutsch) ist erforderlich' });
     const freq = FREQ.includes(frequency) ? frequency : 'daily';
     const houseId = house_id ? parseInt(house_id) : null;
+    const clean = s => (s && s.trim() ? s.trim() : null);   // leere Felder → NULL (Fallback Deutsch)
     const start = todayVienna();
     const end = addDays(start, 30);           // Laufzeit fix 30 Tage
     const { rows } = await pool.query(
-      `INSERT INTO reinigung_infos (message, house_id, frequency, start_date, end_date, active)
-       VALUES ($1,$2,$3,$4,$5,1) RETURNING *`,
-      [message.trim(), houseId, freq, start, end]
+      `INSERT INTO reinigung_infos (message, message_hr, message_tr, message_en, house_id, frequency, start_date, end_date, active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1) RETURNING *`,
+      [message.trim(), clean(message_hr), clean(message_tr), clean(message_en), houseId, freq, start, end]
     );
     res.status(201).json(rows[0]);
   } catch (e) { next(e); }
@@ -79,7 +80,7 @@ router.get('/active-infos', async (req, res, next) => {
     const houseCond = houseId ? `(house_id IS NULL OR house_id = $2)` : `house_id IS NULL`;
     const params = houseId ? [today, houseId] : [today];
     const { rows } = await pool.query(
-      `SELECT id, message, frequency, start_date
+      `SELECT id, message, message_hr, message_tr, message_en, frequency, start_date
          FROM reinigung_infos
         WHERE active = 1 AND start_date <= $1 AND end_date >= $1 AND ${houseCond}
         ORDER BY created_at ASC`,

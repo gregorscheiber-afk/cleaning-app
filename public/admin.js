@@ -1012,12 +1012,16 @@ async function loadInfos() {
     const ziel = i.house_name ? `🏠 ${esc(i.house_name)}` : 'Alle Häuser';
     const rest = daysLeft(i.end_date);
     const aus = i.active ? '' : 'opacity:.5;';
+    const langs = ['🇦🇹'].concat(
+      i.message_hr ? ['🇭🇷'] : [], i.message_tr ? ['🇹🇷'] : [], i.message_en ? ['🇬🇧'] : []
+    ).join(' ');
     return `
     <div style="border:1px solid var(--line);border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;${aus}">
       <div style="font-size:.88rem;color:var(--ink);white-space:pre-line;margin-bottom:.35rem">${esc(i.message)}</div>
       <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;font-size:.72rem;color:var(--ink-muted)">
         <span>${ziel}</span>
         <span>· ${INFO_FREQ_LABEL[i.frequency] || i.frequency}</span>
+        <span>· ${langs}</span>
         <span>· ${i.active ? `noch ${rest} Tage` : 'inaktiv'}</span>
         <span style="flex:1"></span>
         <button data-info-toggle="${i.id}" data-active="${i.active}" style="background:var(--surface-2);border:1px solid var(--line);border-radius:6px;color:var(--ink-soft);font-size:.72rem;padding:.25rem .6rem;cursor:pointer">${i.active ? 'Ausschalten' : 'Einschalten'}</button>
@@ -1048,18 +1052,22 @@ function initInfos() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     const message = document.getElementById('info-message').value.trim();
-    if (!message) { showToast('Bitte einen Text eingeben'); return; }
+    if (!message) { showToast('Bitte einen deutschen Text eingeben'); return; }
     btn.disabled = true;
     try {
       await fetch('/api/infos', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message,
+          message_hr: document.getElementById('info-message-hr').value,
+          message_tr: document.getElementById('info-message-tr').value,
+          message_en: document.getElementById('info-message-en').value,
           house_id: document.getElementById('info-house').value || null,
           frequency: document.getElementById('info-frequency').value,
         }),
       });
-      document.getElementById('info-message').value = '';
+      ['info-message', 'info-message-hr', 'info-message-tr', 'info-message-en']
+        .forEach(id => { document.getElementById(id).value = ''; });
       showToast('Info hinzugefügt ✓');
       loadInfos();
     } catch { showToast(t('toastError')); }

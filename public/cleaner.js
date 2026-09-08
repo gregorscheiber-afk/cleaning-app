@@ -138,6 +138,12 @@ async function maybeShowInfos(houseId) {
   showInfoQueue(due);
 }
 
+// Text in der eingestellten Handy-Sprache, sonst Deutsch (message).
+function infoTextForLang(info) {
+  const lang = (typeof getLang === 'function' && getLang()) || 'de';
+  return info['message_' + lang] || info.message;
+}
+
 function showInfoQueue(queue) {
   if (!queue.length) return;
   const info = queue.shift();
@@ -147,7 +153,7 @@ function showInfoQueue(queue) {
     <div class="info-modal">
       <div class="info-modal-icon">📢</div>
       <div class="info-modal-title">${t('infoTitle')}</div>
-      <div class="info-modal-text">${esc(info.message)}</div>
+      <div class="info-modal-text">${esc(infoTextForLang(info))}</div>
       <button class="info-modal-btn">${t('infoUnderstood')}</button>
     </div>`;
   document.body.appendChild(ov);
