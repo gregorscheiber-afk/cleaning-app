@@ -69,6 +69,11 @@ async function importBookingRows(importRows) {
       const start     = parseDate(row.anreise);
       const end       = parseDate(row.abreise);
 
+      // Platzhalter-/Trennzeilen ohne echten Zimmer-Code (leer oder nur
+      // Striche/Satzzeichen wie "-" oder "–") sind keine echten Zimmer und
+      // werden still ignoriert – NICHT als unbekanntes Zimmer/Fehler gemeldet.
+      if (!/[a-z0-9]/i.test(code)) { continue; }
+
       if (!code || !start || !end) {
         skipped++; invalidCount++;
         details.push({ zimmer: row.zimmer || '?', anreise: row.anreise, abreise: row.abreise, status: 'datum_unlesbar' });
