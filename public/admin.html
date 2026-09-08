@@ -63,6 +63,37 @@
   </div>
 
 
+  <!-- Infos für die Reinigung (Pop-up in der Putzfrauen-Ansicht) -->
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">📢 Infos für die Reinigung</span></div>
+    <div class="panel-body" style="padding:1.1rem">
+      <p style="font-size:.82rem;color:var(--ink-soft);margin:0 0 .9rem">
+        Diese Info erscheint als Pop-up, wenn die Putzkraft ein Haus öffnet.
+        Sie muss es mit „Verstanden" wegklicken. Läuft automatisch 30 Tage.
+      </p>
+      <textarea id="info-message" rows="3" placeholder="Text der Information …"
+        style="width:100%;box-sizing:border-box;background:var(--surface-3);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:.6rem .7rem;font-size:.9rem;font-family:inherit;resize:vertical"></textarea>
+      <div style="display:flex;gap:.9rem;flex-wrap:wrap;margin-top:.75rem">
+        <label style="display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-muted)">
+          Gilt für
+          <select id="info-house" style="background:var(--surface-3);border:1px solid var(--line);border-radius:7px;color:var(--ink);padding:.4rem .55rem;font-size:.85rem;min-width:170px">
+            <option value="">Alle Häuser</option>
+          </select>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:.25rem;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-muted)">
+          Anzeigen
+          <select id="info-frequency" style="background:var(--surface-3);border:1px solid var(--line);border-radius:7px;color:var(--ink);padding:.4rem .55rem;font-size:.85rem">
+            <option value="daily">Täglich (1× pro Tag)</option>
+            <option value="weekly">Wöchentlich (1× pro Woche)</option>
+            <option value="biweekly">Alle 2 Wochen (1×)</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn-primary" id="btn-info-add" style="margin-top:.9rem">Info hinzufügen</button>
+      <div id="info-list" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
   <!-- Verwaltung Toggle -->
   <div style="padding:.5rem 0;text-align:center">
     <button id="btn-verwaltung-toggle" style="

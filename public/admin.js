@@ -981,12 +981,100 @@ window.fetch = async (...args) => {
   return res;
 };
 
+// ── Infos für die Reinigung ──────────────────────────────
+const INFO_FREQ_LABEL = { daily: 'Täglich', weekly: 'Wöchentlich', biweekly: 'Alle 2 Wochen' };
+
+function fillInfoHouseSelect() {
+  const sel = document.getElementById('info-house');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Alle Häuser</option>' +
+    (allHouses || []).map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
+  sel.value = cur;
+}
+
+function daysLeft(endDate) {
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' });
+  return Math.max(0, Math.round((new Date(endDate) - new Date(today)) / 86400000));
+}
+
+async function loadInfos() {
+  const list = document.getElementById('info-list');
+  if (!list) return;
+  fillInfoHouseSelect();
+  let infos = [];
+  try { infos = await (await fetch('/api/infos')).json(); } catch { return; }
+  if (!Array.isArray(infos) || !infos.length) {
+    list.innerHTML = `<div style="color:var(--ink-muted);font-size:.82rem;padding:.4rem 0">Noch keine Infos angelegt.</div>`;
+    return;
+  }
+  list.innerHTML = infos.map(i => {
+    const ziel = i.house_name ? `🏠 ${esc(i.house_name)}` : 'Alle Häuser';
+    const rest = daysLeft(i.end_date);
+    const aus = i.active ? '' : 'opacity:.5;';
+    return `
+    <div style="border:1px solid var(--line);border-radius:8px;padding:.6rem .7rem;margin-bottom:.5rem;${aus}">
+      <div style="font-size:.88rem;color:var(--ink);white-space:pre-line;margin-bottom:.35rem">${esc(i.message)}</div>
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;font-size:.72rem;color:var(--ink-muted)">
+        <span>${ziel}</span>
+        <span>· ${INFO_FREQ_LABEL[i.frequency] || i.frequency}</span>
+        <span>· ${i.active ? `noch ${rest} Tage` : 'inaktiv'}</span>
+        <span style="flex:1"></span>
+        <button data-info-toggle="${i.id}" data-active="${i.active}" style="background:var(--surface-2);border:1px solid var(--line);border-radius:6px;color:var(--ink-soft);font-size:.72rem;padding:.25rem .6rem;cursor:pointer">${i.active ? 'Ausschalten' : 'Einschalten'}</button>
+        <button data-info-del="${i.id}" style="background:none;border:none;color:var(--putzen);font-size:1rem;cursor:pointer" title="Löschen">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-info-toggle]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/infos/${btn.dataset.infoToggle}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: btn.dataset.active !== '1' }),
+      });
+      loadInfos();
+    });
+  });
+  list.querySelectorAll('[data-info-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`/api/infos/${btn.dataset.infoDel}`, { method: 'DELETE' });
+      showToast(t('toastDeleted')); loadInfos();
+    });
+  });
+}
+
+function initInfos() {
+  const btn = document.getElementById('btn-info-add');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const message = document.getElementById('info-message').value.trim();
+    if (!message) { showToast('Bitte einen Text eingeben'); return; }
+    btn.disabled = true;
+    try {
+      await fetch('/api/infos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          house_id: document.getElementById('info-house').value || null,
+          frequency: document.getElementById('info-frequency').value,
+        }),
+      });
+      document.getElementById('info-message').value = '';
+      showToast('Info hinzugefügt ✓');
+      loadInfos();
+    } catch { showToast(t('toastError')); }
+    finally { btn.disabled = false; }
+  });
+}
+
 initLangScreen(() => requirePin('admin', async () => {
   applyLabels();
   await loadHouses();
   loadApartments();
   loadNotifications();
   checkImportWarning();
+  initInfos();
+  loadInfos();
   setInterval(() => {
     // Nicht neu laden wenn gerade jemand in einem Eingabefeld schreibt
     const active = document.activeElement;

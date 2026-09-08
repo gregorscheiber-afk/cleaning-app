@@ -107,8 +107,54 @@ async function showHouseScreen() {
     btn.addEventListener('click', () => {
       selectedHouse = { id: btn.dataset.id, name: btn.dataset.name };
       overlay.classList.add('fade-out');
-      setTimeout(() => { overlay.remove(); showHouseHeader(); loadApartments(); }, 220);
+      setTimeout(() => {
+        overlay.remove(); showHouseHeader(); loadApartments();
+        maybeShowInfos(selectedHouse.id);
+      }, 220);
     });
+  });
+}
+
+// ── Info-Pop-ups (vom Admin gesteuert) ───────────────────
+// Zeitfenster pro Häufigkeit: solange derselbe Schlüssel gilt, muss die
+// Putzkraft die Info nur einmal wegklicken (pro Handy).
+function infoPeriodKey(freq) {
+  const day = Math.floor(Date.now() / 86400000);
+  if (freq === 'weekly')   return 'w' + Math.floor(day / 7);
+  if (freq === 'biweekly') return 'b' + Math.floor(day / 14);
+  return 'd' + day;
+}
+
+async function maybeShowInfos(houseId) {
+  let infos = [];
+  try {
+    infos = await (await fetch('/api/active-infos?house_id=' + encodeURIComponent(houseId))).json();
+  } catch { return; }
+  const due = (infos || []).filter(i => {
+    let stored = null;
+    try { stored = localStorage.getItem('mainfo_' + i.id); } catch {}
+    return stored !== infoPeriodKey(i.frequency);
+  });
+  showInfoQueue(due);
+}
+
+function showInfoQueue(queue) {
+  if (!queue.length) return;
+  const info = queue.shift();
+  const ov = document.createElement('div');
+  ov.className = 'info-modal-overlay';
+  ov.innerHTML = `
+    <div class="info-modal">
+      <div class="info-modal-icon">📢</div>
+      <div class="info-modal-title">${t('infoTitle')}</div>
+      <div class="info-modal-text">${esc(info.message)}</div>
+      <button class="info-modal-btn">${t('infoUnderstood')}</button>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('.info-modal-btn').addEventListener('click', () => {
+    try { localStorage.setItem('mainfo_' + info.id, infoPeriodKey(info.frequency)); } catch {}
+    ov.remove();
+    showInfoQueue(queue);   // nächste Info (falls mehrere)
   });
 }
 

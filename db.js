@@ -83,6 +83,22 @@ async function initDb() {
       high_chair    TEXT,
       UNIQUE(apartment_id, start)
     );
+
+    -- Info-Pop-ups für die Reinigungsansicht: erscheinen beim Öffnen eines
+    -- Hauses und müssen von der Putzkraft weggeklickt werden.
+    --   house_id NULL  = gilt für alle Häuser
+    --   frequency      = 'daily' | 'weekly' | 'biweekly' (wie oft erneut zeigen)
+    --   start_date/end_date = Laufzeit (fix 30 Tage)
+    CREATE TABLE IF NOT EXISTS reinigung_infos (
+      id          SERIAL PRIMARY KEY,
+      message     TEXT NOT NULL,
+      house_id    INTEGER REFERENCES houses(id) ON DELETE CASCADE,
+      frequency   TEXT NOT NULL DEFAULT 'daily',
+      start_date  TEXT NOT NULL,
+      end_date    TEXT NOT NULL,
+      active      INTEGER NOT NULL DEFAULT 1,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);
