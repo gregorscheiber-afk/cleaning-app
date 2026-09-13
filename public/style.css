@@ -666,6 +666,17 @@ main {
 }
 .info-modal-btn:active { transform: scale(.98); }
 
+/* App-Neuerung: eigenes, klar unterscheidbares Aussehen (blau statt gold) */
+.info-modal.is-update {
+  border: 2px solid #2f80c8;
+  box-shadow: 0 12px 40px rgba(47,128,200,.30);
+}
+.info-modal.is-update .info-modal-title { color: #2f80c8; }
+.info-modal.is-update .info-modal-icon { filter: drop-shadow(0 2px 6px rgba(47,128,200,.35)); }
+.info-modal.is-update .info-modal-btn { background: #2f80c8; color: #fff; }
+
+.info-acc-chevron { transition: transform .2s; font-size: .7rem; color: var(--ink-muted); }
+
 /* ── Schaden melden ── */
 .btn-report-damage {
   background: var(--surface-2);

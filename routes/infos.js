@@ -11,6 +11,7 @@ const router = express.Router();
 
 const FREQ = ['daily', 'weekly', 'biweekly'];
 const PLANS = ['wiwa', 'mainstreet', 'sonja', 'helga'];
+const KINDS = ['normal', 'update'];
 
 // Heutiges Datum in Europa/Wien als YYYY-MM-DD (sv-SE liefert ISO-Format).
 function todayVienna() {
@@ -36,9 +37,10 @@ router.get('/infos', requireAdmin, async (_req, res, next) => {
 // ── Admin: neue Info anlegen ────────────────────────────────
 router.post('/infos', requireAdmin, async (req, res, next) => {
   try {
-    const { message, message_hr, message_tr, message_en, house_id, plan, frequency } = req.body || {};
+    const { message, message_hr, message_tr, message_en, house_id, plan, frequency, kind } = req.body || {};
     if (!message || !message.trim()) return res.status(400).json({ error: 'Text (Deutsch) ist erforderlich' });
     const freq = FREQ.includes(frequency) ? frequency : 'daily';
+    const kindVal = KINDS.includes(kind) ? kind : 'normal';
     // Ziel: entweder ein Plan, oder ein einzelnes Haus, oder alle Häuser.
     const planVal = PLANS.includes(plan) ? plan : null;
     const houseId = !planVal && house_id ? parseInt(house_id) : null;
@@ -46,9 +48,9 @@ router.post('/infos', requireAdmin, async (req, res, next) => {
     const start = todayVienna();
     const end = addDays(start, 30);           // Laufzeit fix 30 Tage
     const { rows } = await pool.query(
-      `INSERT INTO reinigung_infos (message, message_hr, message_tr, message_en, house_id, plan, frequency, start_date, end_date, active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1) RETURNING *`,
-      [message.trim(), clean(message_hr), clean(message_tr), clean(message_en), houseId, planVal, freq, start, end]
+      `INSERT INTO reinigung_infos (message, message_hr, message_tr, message_en, house_id, plan, frequency, kind, start_date, end_date, active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,1) RETURNING *`,
+      [message.trim(), clean(message_hr), clean(message_tr), clean(message_en), houseId, planVal, freq, kindVal, start, end]
     );
     res.status(201).json(rows[0]);
   } catch (e) { next(e); }
@@ -99,7 +101,7 @@ router.get('/active-infos', async (req, res, next) => {
     }
 
     const { rows } = await pool.query(
-      `SELECT id, message, message_hr, message_tr, message_en, frequency, start_date
+      `SELECT id, message, message_hr, message_tr, message_en, frequency, kind, start_date
          FROM reinigung_infos
         WHERE active = 1 AND start_date <= $1 AND end_date >= $1 AND (${conds.join(' OR ')})
         ORDER BY created_at ASC`,

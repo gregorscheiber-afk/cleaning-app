@@ -147,12 +147,13 @@ function infoTextForLang(info) {
 function showInfoQueue(queue) {
   if (!queue.length) return;
   const info = queue.shift();
+  const isUpdate = info.kind === 'update';
   const ov = document.createElement('div');
   ov.className = 'info-modal-overlay';
   ov.innerHTML = `
-    <div class="info-modal">
-      <div class="info-modal-icon">📢</div>
-      <div class="info-modal-title">${t('infoTitle')}</div>
+    <div class="info-modal${isUpdate ? ' is-update' : ''}">
+      <div class="info-modal-icon">${isUpdate ? '🆕' : '📢'}</div>
+      <div class="info-modal-title">${isUpdate ? t('updateTitle') : t('infoTitle')}</div>
       <div class="info-modal-text">${esc(infoTextForLang(info))}</div>
       <button class="info-modal-btn">${t('infoUnderstood')}</button>
     </div>`;

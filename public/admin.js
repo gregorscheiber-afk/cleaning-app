@@ -1046,13 +1046,43 @@ window.fetch = async (...args) => {
   return res;
 };
 
-// ── Infos für die Reinigung ──────────────────────────────
+// ── Infos (Reinigung + App-Upgrades) ─────────────────────
 const INFO_FREQ_LABEL = { daily: 'Täglich', weekly: 'Wöchentlich', biweekly: 'Alle 2 Wochen' };
-
 const INFO_PLAN_LABEL = { wiwa: 'Häuser WIWA', mainstreet: 'Häuser MAINSTREET', sonja: 'Häuser SONJA', helga: 'Häuser HELGA' };
 
-function fillInfoHouseSelect() {
-  const sel = document.getElementById('info-house');
+// Zwei Formulare: normal (Reinigung) und update (App-Upgrades)
+const INFO_FORMS = [
+  { prefix: 'info',   kind: 'normal', listId: 'info-list',   empty: 'Noch keine Infos angelegt.' },
+  { prefix: 'infoup', kind: 'update', listId: 'infoup-list', empty: 'Noch keine Neuerungen angelegt.' },
+];
+
+// Baukasten: fertige App-Upgrade-Texte (DE Pflicht, Rest optional)
+const INFO_TEMPLATES = [
+  {
+    label: 'App aktualisiert (allgemein)',
+    de: 'Die App wurde verbessert. Bitte einmal schließen und neu öffnen, damit alles aktuell ist. Danke!',
+    hr: 'Aplikacija je poboljšana. Molimo zatvori je i ponovno otvori kako bi sve bilo ažurno. Hvala!',
+    tr: 'Uygulama güncellendi. Lütfen kapatıp yeniden aç, böylece her şey güncel olur. Teşekkürler!',
+    en: 'The app has been improved. Please close and reopen it so everything is up to date. Thank you!',
+  },
+  {
+    label: 'Neu: Schaden melden',
+    de: 'Neu: Du kannst jetzt bei jedem Apartment einen Schaden melden – tippe auf „🔧 Schaden melden". Du kannst auch ein Foto machen.',
+    hr: 'Novo: sada kod svakog apartmana možeš prijaviti kvar – dodirni „🔧 Prijavi kvar". Možeš i fotografirati.',
+    tr: 'Yeni: artık her dairede arıza bildirebilirsin – „🔧 Arıza bildir"e dokun. Fotoğraf da ekleyebilirsin.',
+    en: 'New: you can now report damage in every apartment – tap “🔧 Report damage”. You can also add a photo.',
+  },
+  {
+    label: 'Neu: Wichtige Hinweise als Fenster',
+    de: 'Neu: Wichtige Hinweise erscheinen jetzt als Fenster, das du mit „Verstanden" bestätigst.',
+    hr: 'Novo: važne obavijesti sada se prikazuju kao prozor koji potvrđuješ s „Razumijem".',
+    tr: 'Yeni: önemli bilgiler artık „Anladım" ile onayladığın bir pencere olarak görünür.',
+    en: 'New: important notes now appear as a window you confirm with “Understood”.',
+  },
+];
+
+function fillInfoHouseSelect(selId) {
+  const sel = document.getElementById(selId);
   if (!sel) return;
   const cur = sel.value;
   sel.innerHTML =
@@ -1071,14 +1101,11 @@ function daysLeft(endDate) {
   return Math.max(0, Math.round((new Date(endDate) - new Date(today)) / 86400000));
 }
 
-async function loadInfos() {
-  const list = document.getElementById('info-list');
+function renderInfoList(infos, listId, empty) {
+  const list = document.getElementById(listId);
   if (!list) return;
-  fillInfoHouseSelect();
-  let infos = [];
-  try { infos = await (await fetch('/api/infos')).json(); } catch { return; }
-  if (!Array.isArray(infos) || !infos.length) {
-    list.innerHTML = `<div style="color:var(--ink-muted);font-size:.82rem;padding:.4rem 0">Noch keine Infos angelegt.</div>`;
+  if (!infos.length) {
+    list.innerHTML = `<div style="color:var(--ink-muted);font-size:.82rem;padding:.4rem 0">${empty}</div>`;
     return;
   }
   list.innerHTML = infos.map(i => {
@@ -1122,35 +1149,75 @@ async function loadInfos() {
   });
 }
 
+async function loadInfos() {
+  INFO_FORMS.forEach(f => fillInfoHouseSelect(`${f.prefix}-house`));
+  if (!document.getElementById('info-list')) return;
+  let infos = [];
+  try { infos = await (await fetch('/api/infos')).json(); } catch { return; }
+  if (!Array.isArray(infos)) infos = [];
+  INFO_FORMS.forEach(f => renderInfoList(infos.filter(i => (i.kind || 'normal') === f.kind), f.listId, f.empty));
+}
+
+async function addInfoFromForm(form) {
+  const btn = document.getElementById(`btn-${form.prefix}-add`);
+  const message = document.getElementById(`${form.prefix}-message`).value.trim();
+  if (!message) { showToast('Bitte einen deutschen Text eingeben'); return; }
+  btn.disabled = true;
+  try {
+    const target = document.getElementById(`${form.prefix}-house`).value;
+    const body = {
+      message,
+      message_hr: document.getElementById(`${form.prefix}-message-hr`).value,
+      message_tr: document.getElementById(`${form.prefix}-message-tr`).value,
+      message_en: document.getElementById(`${form.prefix}-message-en`).value,
+      frequency: document.getElementById(`${form.prefix}-frequency`).value,
+      kind: form.kind,
+    };
+    if (target.startsWith('plan:')) body.plan = target.slice(5);
+    else if (target) body.house_id = target;
+    await fetch('/api/infos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    ['message', 'message-hr', 'message-tr', 'message-en']
+      .forEach(s => { document.getElementById(`${form.prefix}-${s}`).value = ''; });
+    const tmpl = document.getElementById(`${form.prefix}-template`);
+    if (tmpl) tmpl.value = '';
+    showToast(form.kind === 'update' ? 'Neuerung hinzugefügt ✓' : 'Info hinzugefügt ✓');
+    loadInfos();
+  } catch { showToast(t('toastError')); }
+  finally { btn.disabled = false; }
+}
+
 function initInfos() {
-  const btn = document.getElementById('btn-info-add');
-  if (!btn) return;
-  btn.addEventListener('click', async () => {
-    const message = document.getElementById('info-message').value.trim();
-    if (!message) { showToast('Bitte einen deutschen Text eingeben'); return; }
-    btn.disabled = true;
-    try {
-      const target = document.getElementById('info-house').value;
-      const body = {
-        message,
-        message_hr: document.getElementById('info-message-hr').value,
-        message_tr: document.getElementById('info-message-tr').value,
-        message_en: document.getElementById('info-message-en').value,
-        frequency: document.getElementById('info-frequency').value,
-      };
-      if (target.startsWith('plan:')) body.plan = target.slice(5);
-      else if (target) body.house_id = target;
-      // sonst: alle Häuser
-      await fetch('/api/infos', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      ['info-message', 'info-message-hr', 'info-message-tr', 'info-message-en']
-        .forEach(id => { document.getElementById(id).value = ''; });
-      showToast('Info hinzugefügt ✓');
-      loadInfos();
-    } catch { showToast(t('toastError')); }
-    finally { btn.disabled = false; }
+  INFO_FORMS.forEach(form => {
+    document.getElementById(`btn-${form.prefix}-add`)?.addEventListener('click', () => addInfoFromForm(form));
+  });
+
+  // Baukasten: Vorlage wählen → füllt die Felder des Upgrade-Formulars
+  const tmplSel = document.getElementById('infoup-template');
+  if (tmplSel) {
+    tmplSel.innerHTML = '<option value="">— Vorlage wählen (füllt die Felder) —</option>' +
+      INFO_TEMPLATES.map((t, i) => `<option value="${i}">${esc(t.label)}</option>`).join('');
+    tmplSel.addEventListener('change', () => {
+      const tpl = INFO_TEMPLATES[tmplSel.value];
+      if (!tpl) return;
+      document.getElementById('infoup-message').value = tpl.de || '';
+      document.getElementById('infoup-message-hr').value = tpl.hr || '';
+      document.getElementById('infoup-message-tr').value = tpl.tr || '';
+      document.getElementById('infoup-message-en').value = tpl.en || '';
+    });
+  }
+
+  // Aufklappbare Menüs (Reinigung / App-Upgrades)
+  document.querySelectorAll('.info-acc-head').forEach(head => {
+    head.addEventListener('click', () => {
+      const body = document.getElementById(head.dataset.infoAcc);
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      const chev = head.querySelector('.info-acc-chevron');
+      if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
+    });
   });
 }
 

@@ -133,6 +133,8 @@ async function initDb() {
   await pool.query(`ALTER TABLE reinigung_infos ADD COLUMN IF NOT EXISTS message_en TEXT`);
   // Info kann auch für einen ganzen Plan gelten (wiwa|mainstreet|sonja|helga)
   await pool.query(`ALTER TABLE reinigung_infos ADD COLUMN IF NOT EXISTS plan TEXT`);
+  // Art der Info: 'normal' oder 'update' (App-Neuerung – sieht anders aus)
+  await pool.query(`ALTER TABLE reinigung_infos ADD COLUMN IF NOT EXISTS kind TEXT DEFAULT 'normal'`);
 
   console.log('Datenbank bereit.');
 }
