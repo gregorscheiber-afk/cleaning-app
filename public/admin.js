@@ -1049,12 +1049,20 @@ window.fetch = async (...args) => {
 // ── Infos für die Reinigung ──────────────────────────────
 const INFO_FREQ_LABEL = { daily: 'Täglich', weekly: 'Wöchentlich', biweekly: 'Alle 2 Wochen' };
 
+const INFO_PLAN_LABEL = { wiwa: 'Häuser WIWA', mainstreet: 'Häuser MAINSTREET', sonja: 'Häuser SONJA', helga: 'Häuser HELGA' };
+
 function fillInfoHouseSelect() {
   const sel = document.getElementById('info-house');
   if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Alle Häuser</option>' +
-    (allHouses || []).map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('');
+  sel.innerHTML =
+    '<option value="">Alle Häuser</option>' +
+    '<optgroup label="Plan-Ansichten">' +
+      Object.entries(INFO_PLAN_LABEL).map(([k, v]) => `<option value="plan:${k}">${v}</option>`).join('') +
+    '</optgroup>' +
+    '<optgroup label="Einzelne Häuser">' +
+      (allHouses || []).map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join('') +
+    '</optgroup>';
   sel.value = cur;
 }
 
@@ -1074,7 +1082,9 @@ async function loadInfos() {
     return;
   }
   list.innerHTML = infos.map(i => {
-    const ziel = i.house_name ? `🏠 ${esc(i.house_name)}` : 'Alle Häuser';
+    const ziel = i.plan ? `📋 ${INFO_PLAN_LABEL[i.plan] || i.plan}`
+               : i.house_name ? `🏠 ${esc(i.house_name)}`
+               : 'Alle Häuser';
     const rest = daysLeft(i.end_date);
     const aus = i.active ? '' : 'opacity:.5;';
     const langs = ['🇦🇹'].concat(
@@ -1120,16 +1130,20 @@ function initInfos() {
     if (!message) { showToast('Bitte einen deutschen Text eingeben'); return; }
     btn.disabled = true;
     try {
+      const target = document.getElementById('info-house').value;
+      const body = {
+        message,
+        message_hr: document.getElementById('info-message-hr').value,
+        message_tr: document.getElementById('info-message-tr').value,
+        message_en: document.getElementById('info-message-en').value,
+        frequency: document.getElementById('info-frequency').value,
+      };
+      if (target.startsWith('plan:')) body.plan = target.slice(5);
+      else if (target) body.house_id = target;
+      // sonst: alle Häuser
       await fetch('/api/infos', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          message_hr: document.getElementById('info-message-hr').value,
-          message_tr: document.getElementById('info-message-tr').value,
-          message_en: document.getElementById('info-message-en').value,
-          house_id: document.getElementById('info-house').value || null,
-          frequency: document.getElementById('info-frequency').value,
-        }),
+        body: JSON.stringify(body),
       });
       ['info-message', 'info-message-hr', 'info-message-tr', 'info-message-en']
         .forEach(id => { document.getElementById(id).value = ''; });

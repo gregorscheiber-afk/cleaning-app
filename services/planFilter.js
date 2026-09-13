@@ -29,4 +29,18 @@ function planCondition(plan) {
 // Reihenfolge im Plan Sonja: MYALPS Ötztal zuerst, Lodge danach.
 const SONJA_ORDER = `CASE WHEN ${IS_OTZ} THEN 0 WHEN ${IS_LODGE} THEN 1 ELSE 2 END`;
 
-module.exports = { planCondition, SONJA_ORDER };
+// Zu welchen Plänen gehört ein Haus (anhand des Namens)? Spiegelt planCondition
+// wider. Ein Haus kann in mehreren Plänen sein (z. B. Lodge in wiwa UND sonja).
+function plansForHouseName(name) {
+  const n = String(name || '').toLowerCase();
+  const isWP = n.includes('white pearl'), isCec = n.includes('cecilia');
+  const isOtz = n.includes('tztal'), isLodge = n.includes('lodge'), isTirol = n.includes('tirol');
+  const plans = [];
+  if (isWP || isCec) plans.push('mainstreet');
+  if (isOtz || isLodge) plans.push('sonja');
+  if (isTirol) plans.push('helga');
+  if (!(isWP || isCec || isOtz || isTirol)) plans.push('wiwa');
+  return plans;
+}
+
+module.exports = { planCondition, SONJA_ORDER, plansForHouseName };
