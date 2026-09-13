@@ -614,6 +614,69 @@ async function loadHouses() {
 
 }
 
+// ── Reparaturen (Schadensmeldungen) ──────────────────────
+const DEFECT_CAT_LABEL = {
+  light: '💡 Licht/Strom', water: '🚿 Wasser/Bad', furniture: '🛋️ Möbel',
+  key: '🔑 Schlüssel/Tür', other: '❓ Sonstiges',
+};
+let openDefectAptIds = new Set();       // Apartment-IDs mit offener Meldung
+let openDefectHouseCount = new Map();   // Haus-ID → Anzahl offener Meldungen
+
+async function loadDefects() {
+  let defects = [];
+  try { defects = await (await fetch('/api/defects')).json(); } catch { return; }
+  if (!Array.isArray(defects)) defects = [];
+
+  openDefectAptIds = new Set(defects.map(d => d.apartment_id));
+  openDefectHouseCount = new Map();
+  defects.forEach(d => openDefectHouseCount.set(d.house_id, (openDefectHouseCount.get(d.house_id) || 0) + 1));
+
+  const panel = document.getElementById('defects-panel');
+  const list = document.getElementById('defect-list');
+  panel.style.display = defects.length ? 'block' : 'none';
+
+  list.innerHTML = defects.map(d => {
+    const when = fmtDate ? '' : '';
+    const cat = DEFECT_CAT_LABEL[d.category] || d.category;
+    const ort = `${d.house_name ? '🏠 ' + esc(d.house_name) + ' · ' : ''}<strong>${esc(d.apartment_name)}</strong>`;
+    const zeit = new Date(d.created_at).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    return `
+    <div style="border:1px solid var(--line);border-left:3px solid var(--putzen);border-radius:8px;padding:.7rem .8rem;margin-bottom:.6rem">
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem">
+        <span style="font-weight:800;color:var(--ink)">${cat}</span>
+        <span style="color:var(--ink-soft);font-size:.85rem">${ort}</span>
+        <span style="flex:1"></span>
+        <span style="font-size:.72rem;color:var(--ink-muted)">${zeit}${d.reporter ? ' · ' + esc(d.reporter) : ''}</span>
+      </div>
+      ${d.message ? `<div style="font-size:.9rem;color:var(--ink);white-space:pre-line;margin-bottom:.4rem">${esc(d.message)}</div>` : ''}
+      ${d.photo ? `<img src="${d.photo}" alt="" data-defect-photo style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--line);cursor:pointer;display:block;margin-bottom:.4rem"/>` : ''}
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-primary" data-defect-done="${d.id}" style="font-size:.8rem;padding:.4rem .9rem">✓ Erledigt</button>
+        <button data-defect-del="${d.id}" style="background:none;border:1px solid var(--line);border-radius:7px;color:var(--ink-soft);font-size:.8rem;padding:.4rem .7rem;cursor:pointer">Löschen</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-defect-done]').forEach(b => b.addEventListener('click', async () => {
+    await fetch(`/api/defects/${b.dataset.defectDone}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status:'done' }) });
+    showToast('Als erledigt markiert ✓'); loadDefects();
+  }));
+  list.querySelectorAll('[data-defect-del]').forEach(b => b.addEventListener('click', async () => {
+    await fetch(`/api/defects/${b.dataset.defectDel}`, { method:'DELETE' });
+    showToast(t('toastDeleted')); loadDefects();
+  }));
+  list.querySelectorAll('[data-defect-photo]').forEach(img => img.addEventListener('click', () => {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem;cursor:zoom-out';
+    ov.innerHTML = `<img src="${img.src}" style="max-width:100%;max-height:100%;border-radius:8px"/>`;
+    ov.addEventListener('click', () => ov.remove());
+    document.body.appendChild(ov);
+  }));
+
+  // Werkzeug-Zeichen in der aktuell sichtbaren Apartment-Ansicht auffrischen
+  if (allAptsCache.length) { selectedHouseAdmin ? renderHouseApts(selectedHouseAdmin) : renderHouseTiles(); }
+}
+
 // ── Apartments – Kachel-Ansicht ──────────────────────────
 let selectedHouseAdmin = null;
 let allAptsCache = [];
@@ -654,10 +717,12 @@ function renderHouseTiles() {
     const putzen  = house.apts.filter(a => a.status === 'muss_geputzt_werden').length;
     const sauber  = house.apts.filter(a => a.status === 'sauber').length;
     const belegt  = house.apts.filter(a => a.status === 'belegt').length;
+    const defekte = openDefectHouseCount.get(house.id) || 0;
     const stats = [
       putzen ? `<span class="house-tile-stat putzen">⚠ ${putzen} ${t('statusPutzen')}</span>` : '',
       sauber ? `<span class="house-tile-stat sauber">✓ ${sauber} ${t('statusSauber')}</span>` : '',
       belegt ? `<span class="house-tile-stat belegt">● ${belegt} ${t('statusBelegt')}</span>` : '',
+      defekte ? `<span class="house-tile-stat defect">🔧 ${defekte} Reparatur${defekte !== 1 ? 'en' : ''}</span>` : '',
     ].filter(Boolean).join('');
 
     html += `
@@ -781,7 +846,7 @@ function renderAptRow(apt) {
           <tr>
             <td style="padding:.6rem 1.1rem .75rem;width:28%;border-top:3px solid var(--accent)">
               <div style="text-align:center;padding:.2rem 0 .35rem">
-                <span style="display:inline-block;background:var(--accent);color:var(--on-accent);font-size:1.05rem;font-weight:800;letter-spacing:.01em;padding:.32rem 1rem;border-radius:999px">${esc(apt.name)}</span>
+                <span style="display:inline-block;background:var(--accent);color:var(--on-accent);font-size:1.05rem;font-weight:800;letter-spacing:.01em;padding:.32rem 1rem;border-radius:999px">${esc(apt.name)}</span>${openDefectAptIds.has(apt.id) ? '<span class="defect-flag" title="Offene Reparatur">🔧</span>' : ''}
               </div>
               <div style="display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:.25rem">
                 <span style="font-size:.68rem;color:var(--ink-muted)">⏰ ${t('cleanFrom')}:</span>
@@ -1083,6 +1148,8 @@ initLangScreen(() => requirePin('admin', async () => {
   checkImportWarning();
   initInfos();
   loadInfos();
+  loadDefects();
+  setInterval(loadDefects, 20000);
   setInterval(() => {
     // Nicht neu laden wenn gerade jemand in einem Eingabefeld schreibt
     const active = document.activeElement;

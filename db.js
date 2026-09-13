@@ -99,6 +99,23 @@ async function initDb() {
       active      INTEGER NOT NULL DEFAULT 1,
       created_at  TIMESTAMPTZ DEFAULT NOW()
     );
+
+    -- Schadens-/Reparaturmeldungen der Putzkräfte pro Apartment.
+    --   category = stabiler Schlüssel (light|water|furniture|key|other),
+    --              damit der Admin sie immer auf Deutsch sieht
+    --   photo    = verkleinertes JPEG als data:-URL (optional)
+    --   status   = 'open' | 'done'
+    CREATE TABLE IF NOT EXISTS defects (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      category     TEXT NOT NULL DEFAULT 'other',
+      message      TEXT,
+      reporter     TEXT,
+      photo        TEXT,
+      status       TEXT NOT NULL DEFAULT 'open',
+      created_at   TIMESTAMPTZ DEFAULT NOW(),
+      resolved_at  TIMESTAMPTZ
+    );
   `);
 
   await pool.query(`ALTER TABLE apartments ADD COLUMN IF NOT EXISTS pms_code     TEXT`);

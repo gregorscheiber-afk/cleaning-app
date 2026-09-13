@@ -258,11 +258,118 @@ function render(apartments) {
         </div>
         ${notes ? `<div class="apt-card-bottom"><div class="apt-notes">${notes}</div></div>` : ''}
         <div class="apt-card-bottom">${renderBookings(apt.upcoming_bookings)}</div>
+        <div class="apt-card-bottom">
+          <button class="btn-report-damage" data-report="${apt.id}" data-report-name="${esc(apt.name)}">${t('reportDamage')}</button>
+        </div>
       </div>`;
   }).join('');
 
   listEl.querySelectorAll('.btn-confirm').forEach(btn => {
     btn.addEventListener('click', () => confirmClean(btn));
+  });
+  listEl.querySelectorAll('.btn-report-damage').forEach(btn => {
+    btn.addEventListener('click', () => openDamageSheet(btn.dataset.report, btn.dataset.reportName));
+  });
+}
+
+// ── Schaden melden ───────────────────────────────────────
+const DAMAGE_CATS = [
+  { key: 'light',     labelKey: 'catLight' },
+  { key: 'water',     labelKey: 'catWater' },
+  { key: 'furniture', labelKey: 'catFurniture' },
+  { key: 'key',       labelKey: 'catKey' },
+  { key: 'other',     labelKey: 'catOther' },
+];
+
+// Foto clientseitig verkleinern (max. Kante 1280px, JPEG ~0.6) → data-URL
+function resizePhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const max = 1280;
+        let { width: w, height: h } = img;
+        if (w > max || h > max) { const s = Math.min(max / w, max / h); w = Math.round(w * s); h = Math.round(h * s); }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function openDamageSheet(aptId, aptName) {
+  document.getElementById('damage-overlay')?.remove();
+  let chosenCat = null;
+  let photoData = null;
+
+  const ov = document.createElement('div');
+  ov.id = 'damage-overlay';
+  ov.className = 'info-modal-overlay';
+  ov.innerHTML = `
+    <div class="info-modal damage-modal">
+      <div class="info-modal-title">🔧 ${t('damageTitle')}</div>
+      <div class="damage-apt">🏠 ${esc(aptName)}</div>
+      <div class="damage-cats">
+        ${DAMAGE_CATS.map(c => `<button type="button" class="damage-cat" data-cat="${c.key}">${t(c.labelKey)}</button>`).join('')}
+      </div>
+      <textarea id="damage-desc" rows="2" placeholder="${t('damageDesc')}"></textarea>
+      <input id="damage-name" type="text" placeholder="${t('damageReporter')}"/>
+      <label class="damage-photo-btn" for="damage-photo-input">${t('damagePhoto')}</label>
+      <input id="damage-photo-input" type="file" accept="image/*" capture="environment" hidden/>
+      <div id="damage-photo-preview"></div>
+      <div class="damage-actions">
+        <button type="button" class="damage-btn-cancel" id="damage-cancel">${t('damageCancel')}</button>
+        <button type="button" class="info-modal-btn damage-btn-send" id="damage-send">${t('damageSend')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  ov.querySelectorAll('.damage-cat').forEach(b => {
+    b.addEventListener('click', () => {
+      chosenCat = b.dataset.cat;
+      ov.querySelectorAll('.damage-cat').forEach(x => x.classList.toggle('active', x === b));
+    });
+  });
+
+  const photoInput = ov.querySelector('#damage-photo-input');
+  const preview = ov.querySelector('#damage-photo-preview');
+  photoInput.addEventListener('change', async () => {
+    const file = photoInput.files[0];
+    if (!file) return;
+    preview.innerHTML = '…';
+    try {
+      photoData = await resizePhoto(file);
+      preview.innerHTML = `<img src="${photoData}" alt=""/>`;
+      ov.querySelector('.damage-photo-btn').textContent = t('damagePhotoChange');
+    } catch { preview.innerHTML = ''; photoData = null; }
+  });
+
+  ov.querySelector('#damage-cancel').addEventListener('click', () => ov.remove());
+  ov.querySelector('#damage-send').addEventListener('click', async () => {
+    if (!chosenCat) { alert(t('damagePickCat')); return; }
+    const btn = ov.querySelector('#damage-send');
+    btn.disabled = true;
+    try {
+      await fetch('/api/defects', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apartment_id: aptId,
+          category: chosenCat,
+          message: ov.querySelector('#damage-desc').value,
+          reporter: ov.querySelector('#damage-name').value,
+          photo: photoData,
+        }),
+      });
+      ov.remove();
+      alert(t('damageThanks'));
+    } catch { btn.disabled = false; alert(t('connError')); }
   });
 }
 
