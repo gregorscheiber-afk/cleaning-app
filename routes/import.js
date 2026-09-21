@@ -253,10 +253,13 @@ async function verifyImport({ rowsByApt, aptById, unknownCodes, invalidCount, mi
     });
   }
 
-  // Apartments mit PMS-Code, die Buchungen im Zeitfenster haben, aber in der
-  // Datei überhaupt nicht vorkommen (z. B. alles storniert – oder Teilliste)
+  // Apartments mit PMS-Code, die AKTUELLE/ZUKÜNFTIGE Buchungen haben, aber in
+  // der Datei überhaupt nicht vorkommen (z. B. alles storniert – oder Teil-
+  // liste). Nur ab heute: bereits abgereiste Buchungen fallen zu Recht aus dem
+  // Export und sind kein Handlungsbedarf – sonst gäbe es einen Dauer-Fehlalarm.
+  const today  = viennaToday();
   const inFile = [...rowsByApt.keys()];
-  const params = [minStart, ...inFile];
+  const params = [today, ...inFile];
   const notIn  = inFile.length
     ? `AND a.id NOT IN (${inFile.map((_, i) => `$${i + 2}`).join(',')})` : '';
   const { rows: orphanApts } = await pool.query(
