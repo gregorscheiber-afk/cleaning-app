@@ -7,6 +7,15 @@ const PIN_LABELS = {
   cleaner: { de:'Reinigung', hr:'Čišćenje', tr:'Temizlik', en:'Cleaning' },
 };
 
+// Einstieg aus dem MYALPS Ability Cockpit: Der Server hat das Admin-Cookie schon
+// gesetzt, hier entfallen nur PIN- und Sprach-Bildschirm. Ohne gültiges Cookie
+// antwortet die Admin-API mit 401 und der PIN-Bildschirm erscheint wie gewohnt.
+if (location.pathname.endsWith('/admin.html') && new URLSearchParams(location.search).get('cockpit') === '1') {
+  sessionStorage.setItem('ma_auth_admin', 'ok');
+  if (!localStorage.getItem('ma_lang')) localStorage.setItem('ma_lang', 'de');
+  history.replaceState(null, '', location.pathname);
+}
+
 function requirePin(role, onSuccess) {
   const key = `ma_auth_${role}`;
   const stored = sessionStorage.getItem(key);

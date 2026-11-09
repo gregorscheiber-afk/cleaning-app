@@ -1,6 +1,14 @@
 const express = require('express');
 const { setAdminCookie } = require('../services/auth');
+const { pruefeTicket, einlassAbgelehnt, einlassWeiter } = require('../services/cockpit-einlass');
 const router  = express.Router();
+
+// GET /api/cockpit-einlass?ticket=…  – Einstieg aus dem MYALPS Ability Cockpit
+router.get('/cockpit-einlass', (req, res) => {
+  if (!pruefeTicket(req.query.ticket, 'putz')) return einlassAbgelehnt(res);
+  setAdminCookie(req, res);
+  einlassWeiter(res, '/admin.html?cockpit=1');
+});
 
 // POST /api/auth  { pin, role }
 // Bei role "admin" wird zusätzlich ein HttpOnly-Cookie gesetzt, das die
