@@ -1,7 +1,19 @@
 const express = require('express');
 const { setAdminCookie } = require('../services/auth');
-const { pruefeTicket, einlassAbgelehnt, einlassWeiter } = require('../services/cockpit-einlass');
+const { pool } = require('../db');
+const { pruefeTicket, statusErlaubt, einlassAbgelehnt, einlassWeiter } = require('../services/cockpit-einlass');
 const router  = express.Router();
+
+// GET /api/cockpit-status – kleiner Hinweis für die Kachel im Cockpit
+router.get('/cockpit-status', async (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    if (!statusErlaubt(req, 'putz')) return res.status(403).json({ error: 'Kein Zugriff' });
+    const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM defects WHERE status = 'open'`);
+    const n = rows[0].n;
+    res.json({ anzahl: n, text: n === 1 ? '1 offene Reparatur' : `${n} offene Reparaturen` });
+  } catch (e) { next(e); }
+});
 
 // GET /api/cockpit-einlass?ticket=…  – Einstieg aus dem MYALPS Ability Cockpit
 router.get('/cockpit-einlass', (req, res) => {
