@@ -87,7 +87,23 @@ router.get('/plan', async (req, res, next) => {
       jose_notes: joseByApt[apt.id]     || [],
     }));
 
-    res.json({ from, to, days, plan, apartments: result, houses: allHouses });
+    // Storno-/Umbuchungs-Hinweise für die Häuser dieses Plans (Aufenthalt
+    // endet frühestens am ersten sichtbaren Plantag → noch relevant).
+    const cWhere = [`LEFT(c."end",10) >= $1`];
+    if (cond) cWhere.push(cond);
+    const { rows: cancellations } = await pool.query(
+      `SELECT c.guest_name, LEFT(c.start,10) AS start, LEFT(c."end",10) AS "end",
+              a.name AS apartment_name, h.name AS house_name, c.created_at
+         FROM cancellations c
+         JOIN apartments a ON a.id = c.apartment_id
+         LEFT JOIN houses h ON h.id = a.house_id
+        WHERE ${cWhere.join(' AND ')}
+        ORDER BY c.created_at DESC
+        LIMIT 50`,
+      [from]
+    );
+
+    res.json({ from, to, days, plan, apartments: result, houses: allHouses, cancellations });
   } catch(e) { next(e); }
 });
 

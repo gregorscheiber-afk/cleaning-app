@@ -105,6 +105,17 @@ async function initDb() {
     --              damit der Admin sie immer auf Deutsch sieht
     --   photo    = verkleinertes JPEG als data:-URL (optional)
     --   status   = 'open' | 'done'
+    -- Storno-/Umbuchungs-Hinweise: eine Buchung, die beim Import aus der Excel
+    -- verschwunden ist (storniert/umgebucht). Wird im Reinigungsplan angezeigt.
+    CREATE TABLE IF NOT EXISTS cancellations (
+      id           SERIAL PRIMARY KEY,
+      apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,
+      guest_name   TEXT,
+      start        TEXT NOT NULL,
+      "end"        TEXT NOT NULL,
+      created_at   TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS defects (
       id           SERIAL PRIMARY KEY,
       apartment_id INTEGER NOT NULL REFERENCES apartments(id) ON DELETE CASCADE,

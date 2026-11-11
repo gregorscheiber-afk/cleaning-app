@@ -67,6 +67,20 @@ async function loadHouses(data) {
   });
 }
 
+// Storno-/Umbuchungs-Hinweise oben im Plan anzeigen
+function renderCancellations(list) {
+  const c = document.getElementById('cancellation-container');
+  if (!c) return;
+  if (!list || !list.length) { c.innerHTML = ''; return; }
+  const fmt = s => { const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }); };
+  const rows = list.map(x => {
+    const gast = x.guest_name ? esc(x.guest_name) : 'Buchung';
+    const haus = x.house_name ? esc(x.house_name) + ' · ' : '';
+    return `<div class="cancel-row">⚠️ <strong>${gast}</strong> · ${haus}Ap. ${esc(x.apartment_name)} · ${fmt(x.start)}–${fmt(x.end)} <span class="cancel-tag">storniert / umgebucht</span></div>`;
+  }).join('');
+  c.innerHTML = `<div class="cancel-banner"><div class="cancel-title">🔔 Stornierungen / Umbuchungen</div>${rows}</div>`;
+}
+
 async function loadPlan() {
   const from    = fromInput.value || startFrom;
   const days    = parseInt(daysSelect.value) || 30;
@@ -80,6 +94,7 @@ async function loadPlan() {
     const res  = await fetch(url);
     const data = await res.json();
     await loadHouses(data);
+    renderCancellations(data.cancellations || []);
     renderPlan(data, from, days);
   } catch(e) {
     scrollEl.innerHTML = `<div class="planer-empty">Fehler: ${e.message}</div>`;

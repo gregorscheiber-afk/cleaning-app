@@ -262,6 +262,19 @@ header.topbar { flex-shrink: 0; }
 .bk-pop-sub   { font-size: .72rem; color: var(--ink-soft); margin-bottom: .35rem; }
 .bk-pop-row   { padding: .12rem 0; }
 
+/* Storno-/Umbuchungs-Hinweise */
+.cancel-banner {
+  background: #fff6ec;
+  border: 1px solid #e0a96d;
+  border-left: 4px solid #d9843c;
+  border-radius: 10px;
+  margin: .5rem .9rem 0;
+  padding: .6rem .8rem;
+}
+.cancel-title { font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #b4571a; margin-bottom: .35rem; }
+.cancel-row { font-size: .82rem; color: #5a3a1e; padding: .18rem 0; line-height: 1.4; }
+.cancel-tag { font-size: .66rem; font-weight: 700; color: #fff; background: #d9843c; border-radius: 5px; padding: .08rem .4rem; white-space: nowrap; }
+
 /* Überlappende Buchungen: obere/untere Hälfte der Zeile */
 .bk.bk-upper { bottom: 50%; top: 3px; }
 .bk.bk-lower { top: 50%; bottom: 3px; }
@@ -370,6 +383,7 @@ header.topbar { flex-shrink: 0; }
   </div>
   <div id="data-warning-container"></div>
   <div id="cleaning-alert-container"></div>
+  <div id="cancellation-container"></div>
   <div class="planer-scroll" id="planer-scroll">
     <div class="planer-empty">Wird geladen …</div>
   </div>

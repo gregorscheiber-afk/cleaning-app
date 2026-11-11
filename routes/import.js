@@ -30,6 +30,13 @@ function viennaToday() {
     String(v.getDate()).padStart(2, '0');
 }
 
+// Eindeutiges Kennzeichen einer Excel-Buchung: Anreise + Abreise + Gast
+// (es kann zwei Buchungen mit gleicher Anreise im selben Apartment geben).
+function bookingUid(aptId, start, end, guestName) {
+  const guestSlug = (guestName || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').substring(0, 24);
+  return `excel-${aptId}-${start}_${end}_${guestSlug}`;
+}
+
 // Kernlogik: importiert ein Array von Buchungszeilen. Wird vom manuellen
 // Upload UND vom automatischen Import (Make.com) genutzt.
 //
@@ -100,6 +107,8 @@ async function importBookingRows(importRows) {
     }
 
     const today = viennaToday();
+    const clearedAptIds = new Set(); // Apartments, deren Storno-Buchung entfernt wurde
+    const cancellations = [];        // {apartment_id, guest_name, start, end} – storniert/umgebucht
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -138,6 +147,21 @@ async function importBookingRows(importRows) {
       // Zukunftslisten, bleibt die Vergangenheit automatisch verschont.
       const deleteFrom = minStart || today;
       for (const [aptId, aptRows] of rowsByApt) {
+        // Storno-Erkennung: zukünftige Buchungen VOR dem Ersetzen merken. Was
+        // danach nicht mehr in der Datei steht (uid fehlt), wurde storniert
+        // oder umgebucht → Hinweis für den Reinigungsplan.
+        const { rows: oldFuture } = await client.query(
+          `SELECT uid, guest_name, LEFT(start,10) s, LEFT("end",10) e FROM bookings
+           WHERE apartment_id=$1 AND (source != 'manual' OR source IS NULL)
+           AND LEFT("end",10) >= $2`,
+          [aptId, today]
+        );
+        const newUids = new Set(aptRows.map(b => bookingUid(aptId, b.start, b.end, b.guestName)));
+        oldFuture.forEach(o => {
+          if (o.uid && !newUids.has(o.uid))
+            cancellations.push({ apartment_id: aptId, guest_name: o.guest_name, start: o.s, end: o.e });
+        });
+
         await client.query(
           `DELETE FROM bookings
            WHERE apartment_id=$1
@@ -147,12 +171,7 @@ async function importBookingRows(importRows) {
         );
 
         for (const b of aptRows) {
-          // Kennzeichen muss die Buchung EINDEUTIG beschreiben: Es kann zwei
-          // Buchungen mit gleicher Anreise im selben Apartment geben
-          // (z. B. Gruppen-/Splitbuchungen) – daher Anreise + Abreise + Gast.
-          const guestSlug = (b.guestName || '')
-            .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').substring(0, 24);
-          const uid = `excel-${aptId}-${b.start}_${b.end}_${guestSlug}`;
+          const uid = bookingUid(aptId, b.start, b.end, b.guestName);
           await client.query(
             `INSERT INTO bookings (apartment_id, uid, start, "end", guest_name, persons, source)
              VALUES ($1, $2, $3, $4, $5, $6, 'excel')
@@ -168,9 +187,7 @@ async function importBookingRows(importRows) {
         // stündlichen Re-Import; die 24-Stunden-Frist läuft normal weiter)
         const carried = prevHi[aptId] || {};
         for (const b of aptRows) {
-          const guestSlug = (b.guestName || '')
-            .toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').substring(0, 24);
-          const uid = `excel-${aptId}-${b.start}_${b.end}_${guestSlug}`;
+          const uid = bookingUid(aptId, b.start, b.end, b.guestName);
           if (carried[uid]) {
             await client.query(
               `UPDATE bookings SET highlighted_until=$1 WHERE apartment_id=$2 AND uid=$3`,
@@ -200,6 +217,47 @@ async function importBookingRows(importRows) {
         }
       }
 
+      // Storno-Bereinigung: Ein Zimmer ohne Belegung im Zeitraum steht gar
+      // nicht in der Excel. Steht aber ein ANDERES Zimmer desselben Hauses in
+      // der Datei, war das Haus im Export dabei → das fehlende Zimmer ist
+      // wirklich frei (storniert) und seine übrig gebliebene Buchung wird
+      // entfernt. Häuser, die komplett NICHT in der Datei stehen (z. B. eine
+      // Teilliste pro Plan), bleiben unangetastet. Nur zukünftige, nicht-
+      // manuelle Buchungen; die Vergangenheit bleibt als Historie erhalten.
+      const fileAptIds = [...rowsByApt.keys()];
+      if (fileAptIds.length) {
+        const ph = fileAptIds.map((_, i) => `$${i + 2}`).join(',');
+        const { rows: cleared } = await client.query(
+          `DELETE FROM bookings
+            WHERE (source != 'manual' OR source IS NULL)
+            AND LEFT("end",10) >= $1
+            AND apartment_id NOT IN (${ph})
+            AND apartment_id IN (
+              SELECT id FROM apartments WHERE house_id IN (
+                SELECT DISTINCT house_id FROM apartments
+                WHERE id IN (${ph}) AND house_id IS NOT NULL
+              )
+            )
+            RETURNING apartment_id, guest_name, LEFT(start,10) s, LEFT("end",10) e`,
+          [today, ...fileAptIds]
+        );
+        cleared.forEach(r => {
+          clearedAptIds.add(r.apartment_id);
+          cancellations.push({ apartment_id: r.apartment_id, guest_name: r.guest_name, start: r.s, end: r.e });
+        });
+      }
+
+      // Storno-/Umbuchungs-Hinweise speichern (für den Reinigungsplan) und
+      // alte Hinweise (Aufenthalt länger vorbei) aufräumen.
+      for (const c of cancellations) {
+        await client.query(
+          `INSERT INTO cancellations (apartment_id, guest_name, start, "end") VALUES ($1,$2,$3,$4)`,
+          [c.apartment_id, c.guest_name, c.start, c.end]
+        );
+      }
+      const pruneBefore = new Date(new Date(today).getTime() - 14 * 86400000).toISOString().substring(0, 10);
+      await client.query(`DELETE FROM cancellations WHERE LEFT("end",10) < $1`, [pruneBefore]);
+
       await client.query('COMMIT');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
@@ -208,8 +266,9 @@ async function importBookingRows(importRows) {
       client.release();
     }
 
-    // Status der betroffenen Apartments neu berechnen (nach dem COMMIT)
-    for (const aptId of rowsByApt.keys()) {
+    // Status der betroffenen Apartments neu berechnen (nach dem COMMIT) –
+    // inkl. der Apartments, deren Storno-Buchung soeben entfernt wurde.
+    for (const aptId of new Set([...rowsByApt.keys(), ...clearedAptIds])) {
       await recomputeStatus(aptId);
     }
 
@@ -253,36 +312,20 @@ async function verifyImport({ rowsByApt, aptById, unknownCodes, invalidCount, mi
     });
   }
 
-  // Apartments mit PMS-Code, die AKTUELLE/ZUKÜNFTIGE Buchungen haben, aber in
-  // der Datei überhaupt nicht vorkommen (z. B. alles storniert – oder Teil-
-  // liste). Nur ab heute: bereits abgereiste Buchungen fallen zu Recht aus dem
-  // Export und sind kein Handlungsbedarf – sonst gäbe es einen Dauer-Fehlalarm.
-  const today  = viennaToday();
-  const inFile = [...rowsByApt.keys()];
-  const params = [today, ...inFile];
-  const notIn  = inFile.length
-    ? `AND a.id NOT IN (${inFile.map((_, i) => `$${i + 2}`).join(',')})` : '';
-  const { rows: orphanApts } = await pool.query(
-    `SELECT DISTINCT a.name FROM apartments a
-     JOIN bookings b ON b.apartment_id = a.id
-     WHERE a.pms_code IS NOT NULL AND a.pms_code != ''
-     AND (b.source != 'manual' OR b.source IS NULL)
-     AND LEFT(b."end",10) >= $1
-     ${notIn}`,
-    params
-  );
-
+  // Hinweis: Apartments, die komplett aus der Datei verschwinden, bereinigt
+  // der Import jetzt selbst (Storno), sofern ihr Haus im Export dabei war.
+  // Die frühere "Apartment hat Buchungen, aber nicht in der Datei"-Warnung
+  // war bei normalen Stornos nur ein Dauer-Fehlalarm und entfällt daher.
   const check = {
     checked_at: new Date().toISOString(),
-    ok: !missing.length && !stale.length && !unknownCodes.size &&
-        !invalidCount && !orphanApts.length,
+    ok: !missing.length && !stale.length && !unknownCodes.size && !invalidCount,
     missing_total: missing.length,
     stale_total:   stale.length,
     missing: missing.slice(0, 20),
     stale:   stale.slice(0, 20),
     unknown_codes: [...unknownCodes].slice(0, 20),
     invalid_rows:  invalidCount,
-    apartments_not_in_file: orphanApts.map(a => a.name).slice(0, 20),
+    apartments_not_in_file: [],
   };
 
   await pool.query(
