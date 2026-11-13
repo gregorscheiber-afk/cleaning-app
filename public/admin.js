@@ -934,9 +934,6 @@ document.getElementById('add-apt-form').addEventListener('submit', async e => {
 });
 
 
-document.getElementById('btn-lang').addEventListener('click', () => {
-  localStorage.removeItem('ma_lang'); location.reload();
-});
 
 // Plan-Dropdown
 const planMenuBtn  = document.getElementById('btn-plan-menu');
@@ -1221,7 +1218,9 @@ function initInfos() {
   });
 }
 
-initLangScreen(() => requirePin('admin', async () => {
+// Der Admin ist nur auf Deutsch – kein Sprach-Startscreen, keine Umschaltung.
+try { localStorage.setItem('ma_lang', 'de'); } catch (e) {}
+requirePin('admin', async () => {
   applyLabels();
   await loadHouses();
   loadApartments();
@@ -1241,4 +1240,4 @@ initLangScreen(() => requirePin('admin', async () => {
   setInterval(checkImportWarning, 5 * 60 * 1000);
   loadCleaningLog();
   initVerwaltungToggle();
-}));
+});
