@@ -12,7 +12,6 @@ function showToast(msg) {
 }
 
 function applyLabels() {
-  document.getElementById('lbl-role').textContent            = t('roleAdmin');
   document.getElementById('lbl-clean').textContent           = t('roleClean');
   document.getElementById('lbl-stat-putzen').textContent     = t('statTodo');
   document.getElementById('lbl-stat-sauber').textContent     = t('statClean');
