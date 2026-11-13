@@ -108,9 +108,20 @@ header.topbar {
   border-radius: 999px;
   padding: .35rem .8rem;
   transition: color .15s, border-color .15s;
+  white-space: nowrap;      /* nie umbrechen – sonst ragt die Pille aus der Leiste */
+  line-height: 1.2;
 }
 
 .nav-pill:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+/* Handy: Leiste kompakter, damit alles einzeilig in die 56px-Höhe passt */
+@media (max-width: 560px) {
+  header.topbar { padding: 0 .7rem; gap: .5rem; }
+  .topbar-logo .logo-sub { display: none; }
+  .topbar-right { gap: .35rem; }
+  .nav-pill { font-size: .64rem; padding: .3rem .6rem; letter-spacing: .02em; }
+  .page-role-badge { font-size: .6rem; padding: .28rem .55rem; letter-spacing: .04em; }
+}
 
 .page-role-badge {
   font-size: .65rem;
