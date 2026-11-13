@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MYALPS · Anreisen heute</title>
+<link rel="stylesheet" href="/style.css"/>
+<style>
+.arr-wrap { max-width: 760px; margin: 0 auto; padding: 1rem .9rem 3rem; }
+.arr-bar {
+  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.arr-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); }
+.arr-date-input {
+  background: var(--surface-3); border: 1px solid var(--line); border-radius: 7px;
+  color: var(--ink); padding: .35rem .55rem; font-size: .85rem; outline: none;
+}
+.arr-today-btn {
+  background: var(--accent); color: var(--on-accent); border: none; border-radius: 7px;
+  padding: .4rem .8rem; font-size: .8rem; font-weight: 700; cursor: pointer;
+}
+.arr-count { margin-left: auto; font-size: .8rem; color: var(--ink-soft); font-weight: 700; }
+
+.arr-house {
+  font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent); margin: 1.2rem 0 .5rem;
+}
+.arr-card {
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: 10px; padding: .75rem .9rem; margin-bottom: .6rem;
+}
+.arr-card-top { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.arr-apt {
+  display: inline-block; background: var(--accent); color: var(--on-accent);
+  font-weight: 800; font-size: .9rem; padding: .18rem .7rem; border-radius: 999px;
+}
+.arr-guest { font-size: 1rem; font-weight: 700; color: var(--ink); }
+.arr-nights { font-size: .78rem; color: var(--ink-soft); margin-left: auto; white-space: nowrap; }
+.arr-meta { margin-top: .45rem; display: flex; gap: .5rem; flex-wrap: wrap; font-size: .82rem; color: var(--ink); }
+.arr-badge {
+  background: var(--surface-3); border: 1px solid var(--line); border-radius: 6px;
+  padding: .12rem .5rem; font-size: .78rem; color: var(--ink);
+}
+.arr-empty { text-align: center; color: var(--ink-muted); padding: 3rem 1rem; font-size: .95rem; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="topbar-logo" href="/admin.html">
+    <svg class="logo-mark" viewBox="0 0 40 32" fill="none">
+      <path d="M0 30 L8 14 L13 21 L20 6 L27 21 L32 14 L40 30 Z" fill="#c8963a"/>
+    </svg>
+    <div><span class="logo-name">MYALPS</span><span class="logo-sub">Apartments und Chalets</span></div>
+  </a>
+  <div class="topbar-right">
+    <span class="page-role-badge">🛬 Anreisen</span>
+    <a class="nav-pill" href="/admin.html">← Admin</a>
+  </div>
+</header>
+
+<main>
+  <div class="arr-wrap">
+    <div class="arr-bar">
+      <span class="arr-title" id="arr-title">Anreisen</span>
+      <input type="date" id="arr-date" class="arr-date-input"/>
+      <button class="arr-today-btn" id="arr-today">Heute</button>
+      <span class="arr-count" id="arr-count"></span>
+    </div>
+    <div id="arr-list"><div class="arr-empty">Wird geladen …</div></div>
+  </div>
+</main>
+
+<script src="/arrivals.js"></script>
+</body>
+</html>

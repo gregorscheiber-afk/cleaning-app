@@ -23,6 +23,7 @@ const planRouter        = require('./routes/plan');
 const authRouter        = require('./routes/auth');
 const infosRouter       = require('./routes/infos');
 const defectsRouter     = require('./routes/defects');
+const arrivalsRouter    = require('./routes/arrivals');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use('/api',            planRouter);
 app.use('/api',            authRouter);
 app.use('/api',            infosRouter);
 app.use('/api',            defectsRouter);
+app.use('/api',            arrivalsRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/test-db', async (_req, res) => {
   try {
