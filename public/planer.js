@@ -17,6 +17,7 @@ const PLAN_LABELS = {
   mainstreet: 'Plan MAINSTREET',
   sonja:      'Plan SONJA',
   helga:      'Plan HELGA',
+  richard:    'Plan RICHARD',
 };
 
 badgeHeader.textContent = PLAN_LABELS[planType] || 'Belegungsplan';

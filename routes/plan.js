@@ -22,8 +22,9 @@ router.get('/plan', async (req, res, next) => {
 
     const cond = planCondition(plan);
     if (cond) aptSql += ` AND ${cond}`;
-    // Hausfilter-Dropdown gibt es nur im WIWA-Plan (mainstreet/sonja/helga fest)
-    if (houseId && plan !== 'mainstreet' && plan !== 'sonja' && plan !== 'helga') {
+    // Hausfilter-Dropdown gibt es nur im WIWA-Plan (feste Häuser bei den anderen)
+    const fixedPlan = ['mainstreet', 'sonja', 'helga', 'richard'].includes(plan);
+    if (houseId && !fixedPlan) {
       aptParams.push(houseId);
       aptSql += ` AND a.house_id=$${aptParams.length}`;
     }
@@ -61,6 +62,11 @@ router.get('/plan', async (req, res, next) => {
         b.high_chair    = svc?.high_chair    || null;
       });
     }
+
+    // Zugang "Richard" (Jordans Lodge): Gastname NICHT anzeigen (Datenschutz).
+    // Alle anderen Infos (Datum, Personen, Zusatzleistungen) bleiben.
+    const hideGuest = plan === 'richard';
+    if (hideGuest) bookings.forEach(b => { b.guest_name = null; });
 
     // Notizen pro Apartment (getrennt: Putzfrau-Notizen und José-Notizen)
     let notesByApt = {};
@@ -102,6 +108,7 @@ router.get('/plan', async (req, res, next) => {
         LIMIT 50`,
       [from]
     );
+    if (hideGuest) cancellations.forEach(c => { c.guest_name = null; });
 
     res.json({ from, to, days, plan, apartments: result, houses: allHouses, cancellations });
   } catch(e) { next(e); }
