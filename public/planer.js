@@ -73,19 +73,45 @@ async function loadHouses(data) {
   });
 }
 
-// Storno-/Umbuchungs-Hinweise oben im Plan anzeigen
+// Storno-/Umbuchungs-Hinweise: kompakter Knopf in der Leiste, der ein eigenes
+// Fenster öffnet (spart Platz im Plan).
+let _cancellations = [];
+
 function renderCancellations(list) {
-  const c = document.getElementById('cancellation-container');
-  if (!c) return;
-  if (!list || !list.length) { c.innerHTML = ''; return; }
+  _cancellations = list || [];
+  const btn = document.getElementById('btn-cancellations');
+  if (!btn) return;
+  if (!_cancellations.length) { btn.hidden = true; return; }
+  btn.hidden = false;
+  btn.textContent = `🔔 Stornierungen (${_cancellations.length})`;
+}
+
+function openCancellationsModal() {
+  if (!_cancellations.length) return;
+  document.getElementById('cancel-overlay')?.remove();
   const fmt = s => { const d = new Date(s); return isNaN(d) ? esc(s) : d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }); };
-  const rows = list.map(x => {
+  const items = _cancellations.map(x => {
     const gast = x.guest_name ? esc(x.guest_name) : 'Buchung';
     const haus = x.house_name ? esc(x.house_name) + ' · ' : '';
-    return `<div class="cancel-row">⚠️ <strong>${gast}</strong> · ${haus}Ap. ${esc(x.apartment_name)} · ${fmt(x.start)}–${fmt(x.end)} <span class="cancel-tag">storniert / umgebucht</span></div>`;
+    return `<div class="cancel-item">⚠️ <strong>${gast}</strong> · ${haus}Ap. ${esc(x.apartment_name)} · ${fmt(x.start)}–${fmt(x.end)} <span class="cancel-tag">storniert / umgebucht</span></div>`;
   }).join('');
-  c.innerHTML = `<div class="cancel-banner"><div class="cancel-title">🔔 Stornierungen / Umbuchungen</div>${rows}</div>`;
+  const ov = document.createElement('div');
+  ov.id = 'cancel-overlay';
+  ov.className = 'cancel-overlay';
+  ov.innerHTML = `
+    <div class="cancel-box">
+      <div class="cancel-box-title">🔔 Stornierungen / Umbuchungen</div>
+      <div class="cancel-box-sub">${_cancellations.length} ${_cancellations.length === 1 ? 'Eintrag' : 'Einträge'}</div>
+      ${items}
+      <button class="cancel-close" type="button">Schließen</button>
+    </div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.querySelector('.cancel-close').addEventListener('click', close);
+  ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
 }
+
+document.getElementById('btn-cancellations')?.addEventListener('click', openCancellationsModal);
 
 async function loadPlan() {
   const from    = fromInput.value || startFrom;
