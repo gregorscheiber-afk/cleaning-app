@@ -21,6 +21,11 @@ const PLAN_LABELS = {
 };
 
 badgeHeader.textContent = PLAN_LABELS[planType] || 'Belegungsplan';
+
+// "Anreisen"-Knopf auf den aktuellen Plan zeigen lassen (z. B. Richard =
+// nur Jordans Lodge ohne Gastname).
+const btnArrivals = document.getElementById('btn-arrivals');
+if (btnArrivals) btnArrivals.href = '/arrivals.html?plan=' + encodeURIComponent(planType);
 document.title = `MYALPS · ${PLAN_LABELS[planType] || 'Belegungsplan'}`;
 
 // Hausfilter nur für WIWA

@@ -1,5 +1,6 @@
 const express = require('express');
 const { pool } = require('../db');
+const { planCondition } = require('../services/planFilter');
 const router = express.Router();
 
 // Anreisen eines Tages (Standard: heute, Europa/Wien). Offen wie der Planer.
@@ -7,10 +8,13 @@ function todayVienna() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Vienna' });
 }
 
-// GET /api/arrivals?date=YYYY-MM-DD
+// GET /api/arrivals?date=YYYY-MM-DD&plan=wiwa|richard|...
 router.get('/arrivals', async (req, res, next) => {
   try {
     const date = /^\d{4}-\d{2}-\d{2}$/.test(req.query.date || '') ? req.query.date : todayVienna();
+    const plan = req.query.plan || '';
+    const cond = planCondition(plan);           // leer = alle Häuser
+    const hideGuest = plan === 'richard';        // Zugang Richard: kein Gastname
 
     const { rows: arrivals } = await pool.query(
       `SELECT b.id, b.guest_name, b.persons,
@@ -20,10 +24,11 @@ router.get('/arrivals', async (req, res, next) => {
          FROM bookings b
          JOIN apartments a ON a.id = b.apartment_id
          LEFT JOIN houses h ON h.id = a.house_id
-        WHERE LEFT(b.start,10) = $1
+        WHERE LEFT(b.start,10) = $1${cond ? ` AND ${cond}` : ''}
         ORDER BY h.name, a.name`,
       [date]
     );
+    if (hideGuest) arrivals.forEach(a => { a.guest_name = null; });
 
     // Zusatzleistungen (Anker: Apartment + Anreisedatum)
     if (arrivals.length) {

@@ -3,6 +3,18 @@ const dateEl  = document.getElementById('arr-date');
 const titleEl = document.getElementById('arr-title');
 const countEl = document.getElementById('arr-count');
 
+// Optionaler Plan-Filter aus der Adresse (?plan=richard zeigt nur die Jordans
+// Lodge ohne Gastname). Ohne Plan = alle Häuser.
+const PLAN = new URLSearchParams(window.location.search).get('plan') || '';
+
+// Zurück-Link: aus einer Plan-Ansicht zurück in den Plan, sonst zum Admin.
+(function setBack() {
+  const back = document.getElementById('arr-back');
+  if (!back) return;
+  const planerPlans = ['wiwa', 'mainstreet', 'sonja', 'helga', 'richard'];
+  if (planerPlans.includes(PLAN)) { back.href = '/planer.html?plan=' + encodeURIComponent(PLAN); back.textContent = '← Zum Plan'; }
+})();
+
 function esc(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 function todayVienna() {
@@ -33,7 +45,8 @@ async function load() {
   listEl.innerHTML = '<div class="arr-empty">Wird geladen …</div>';
   let data;
   try {
-    data = await (await fetch('/api/arrivals?date=' + encodeURIComponent(date))).json();
+    const q = '/api/arrivals?date=' + encodeURIComponent(date) + (PLAN ? '&plan=' + encodeURIComponent(PLAN) : '');
+    data = await (await fetch(q)).json();
   } catch {
     listEl.innerHTML = '<div class="arr-empty">⚠️ Verbindungsfehler</div>';
     return;
