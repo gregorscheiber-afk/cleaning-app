@@ -33,7 +33,7 @@ router.post('/auth', (req, res) => {
     admin:   process.env.PIN_ADMIN   || '1234',
     planer:  process.env.PIN_PLANER  || '5678',
     cleaner: process.env.PIN_CLEANER || '9012',
-    richard: process.env.PIN_RICHARD || '4071', // Zugang Jordans Lodge (änderbar via Env)
+    richard: process.env.PIN_RICHARD || '126', // Zugang Jordans Lodge (änderbar via Env)
   };
 
   if (!pins[role]) return res.status(400).json({ ok: false, error: 'Unbekannte Rolle' });
