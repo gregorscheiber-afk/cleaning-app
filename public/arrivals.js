@@ -95,6 +95,12 @@ async function load() {
 document.getElementById('arr-today').addEventListener('click', () => { dateEl.value = todayVienna(); load(); });
 dateEl.addEventListener('change', load);
 
-dateEl.value = todayVienna();
-load();
-setInterval(load, 5 * 60 * 1000); // alle 5 Min aktualisieren
+function startArrivals() {
+  dateEl.value = todayVienna();
+  load();
+  setInterval(load, 5 * 60 * 1000); // alle 5 Min aktualisieren
+}
+
+// Richard-Zugang (Jordans Lodge): auch die Anreisen mit demselben PIN schützen.
+if (PLAN === 'richard' && typeof requirePin === 'function') requirePin('richard', startArrivals);
+else startArrivals();

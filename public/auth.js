@@ -5,6 +5,7 @@ const PIN_LABELS = {
   admin:   { de:'Admin', hr:'Admin', tr:'Admin', en:'Admin' },
   planer:  { de:'Belegungsplan', hr:'Plan zauzetosti', tr:'Doluluk planı', en:'Occupancy plan' },
   cleaner: { de:'Reinigung', hr:'Čišćenje', tr:'Temizlik', en:'Cleaning' },
+  richard: { de:'Jordans Lodge', hr:'Jordans Lodge', tr:'Jordans Lodge', en:'Jordans Lodge' },
 };
 
 // Einstieg aus dem MYALPS Ability Cockpit: Der Server hat das Admin-Cookie schon

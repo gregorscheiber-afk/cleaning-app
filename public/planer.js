@@ -483,10 +483,15 @@ async function checkCleaningAlert() {
 
 // Start
 initLangScreen(() => {
-  loadPlan();
-  checkCleaningAlert();
-  checkImportWarning();
-  setInterval(() => { checkCleaningAlert(); checkImportWarning(); }, 5 * 60 * 1000); // alle 5 Min prüfen
+  const start = () => {
+    loadPlan();
+    checkCleaningAlert();
+    checkImportWarning();
+    setInterval(() => { checkCleaningAlert(); checkImportWarning(); }, 5 * 60 * 1000); // alle 5 Min prüfen
+  };
+  // Nur der Richard-Zugang (Jordans Lodge) ist mit einem eigenen PIN geschützt.
+  if (planType === 'richard' && typeof requirePin === 'function') requirePin('richard', start);
+  else start();
 });
 
 // Tippen außerhalb eines Info-Zeichens schließt offene Notiz-Tooltips (Handy)
